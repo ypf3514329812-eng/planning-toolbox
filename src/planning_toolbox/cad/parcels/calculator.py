@@ -43,7 +43,7 @@ def process_parcels(
     for idx, info in enumerate(entities_info):
         ent = info["entity"]
         layer = info["layer"]
-        pts, is_closed = points_from_dxf_polyline(ent)
+        pts, is_closed, _has_bulge = points_from_dxf_polyline(ent)
         status, poly, err_msg = parse_parcel_geometry(pts, is_closed)
 
         raw_area = poly.area if poly else 0.0
@@ -60,7 +60,8 @@ def process_parcels(
             area_ha=area_ha,
             geometry=poly,
             label_point=label_pt,
-            error_message=err_msg
+            error_message=err_msg,
+            has_bulge_approximation=_has_bulge
         )
         raw_parcels.append(parcel)
 

@@ -1,40 +1,70 @@
 from typing import Tuple, Optional, List
 import math
+import logging
 from shapely.geometry import Polygon, Point, LineString
 from shapely.validation import explain_validity
 
-def points_from_dxf_polyline(entity) -> Tuple[List[Tuple[float, float]], bool]:
+logger = logging.getLogger("planning_toolbox")
+
+def points_from_dxf_polyline(entity) -> Tuple[List[Tuple[float, float]], bool, bool]:
     """
     Extracts 2D points and closed state from an ezdxf LWPOLYLINE or POLYLINE entity.
-    Handles bulges (arc segments) cleanly.
+    Handles bulges (arc segments) via ezdxf path flattening.
+    
+    Returns:
+        (vertices, is_closed, has_bulge_approximation)
+        has_bulge_approximation is True if arc segments were detected but could
+        not be expanded via ezdxf.path (fallback path was used).
     """
     is_closed = getattr(entity, "is_closed", False)
     
-    # Try using ezdxf path module if available for arc bulge expansion
+    # Try using ezdxf path module for arc bulge expansion
     try:
         import ezdxf.path
         path = ezdxf.path.make_path(entity)
         # Flatten path to vertices
-        vertices = [ (p.x, p.y) for p in path.flattening(distance=0.01) ]
+        vertices = [(p.x, p.y) for p in path.flattening(distance=0.01)]
         if len(vertices) > 1 and math.hypot(vertices[0][0] - vertices[-1][0], vertices[0][1] - vertices[-1][1]) < 1e-5:
-            # Drop redundant duplicate last point if closed
             vertices.pop()
             is_closed = True
-        return vertices, is_closed
-    except Exception:
-        # Fallback to direct vertex reading
+        return vertices, is_closed, False
+    except Exception as e:
+        logger.debug(f"ezdxf.path fallback triggered: {e}")
+        # Fallback to direct vertex reading (bulge data is lost)
+        has_bulge = False
         if entity.dxftype() == 'LWPOLYLINE':
             pts = [(v[0], v[1]) for v in entity.get_points(format='xy')]
+            # Check if any vertex has a non-zero bulge value
+            try:
+                for v in entity.get_points(format='xyseb'):
+                    if len(v) >= 5 and abs(v[4]) > 1e-10:
+                        has_bulge = True
+                        break
+            except Exception:
+                pass
         elif entity.dxftype() == 'POLYLINE':
             pts = [(v.dxf.location.x, v.dxf.location.y) for v in entity.vertices]
+            try:
+                for v in entity.vertices:
+                    if hasattr(v.dxf, 'bulge') and abs(v.dxf.bulge) > 1e-10:
+                        has_bulge = True
+                        break
+            except Exception:
+                pass
         else:
             pts = []
+        
+        if has_bulge:
+            logger.warning(
+                "Polyline contains arc/bulge segments but ezdxf.path expansion failed. "
+                "Area calculation uses straight-line approximation and may be inaccurate."
+            )
         
         if len(pts) > 2:
             if math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1]) < 1e-5:
                 pts.pop()
                 is_closed = True
-        return pts, is_closed
+        return pts, is_closed, has_bulge
 
 def parse_parcel_geometry(pts: List[Tuple[float, float]], is_closed: bool) -> Tuple[str, Optional[Polygon], Optional[str]]:
     """

@@ -25,11 +25,25 @@ pip install -e .
 python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf
 ```
 
+可选参数：
+- `--config path/to/config.yaml` — 使用自定义配置文件
+- `--output path/to/output_dir` — 自定义输出目录
+- `--verbose` — 显示详细调试信息
+- `--version` — 显示版本号
+
 运行后会在 `output/` 目录中自动生成：
 
-1. `sample_parcels_labeled.dxf` — 包含地块编号（如 P001）与面积（如 1.24 ha）的标注 DXF 图纸。
-2. `sample_parcels.csv` — 地块面积及状态统计表格。
-3. `parcel_report.txt` — 详细处理报告（包含有效地块数、未闭合图形及面积汇总）。
+1. `<文件名>_labeled.dxf` — 包含地块编号（如 P001）与面积（如 1.24 ha）的标注 DXF 图纸。
+2. `<文件名>.csv` — 地块面积及状态统计表格。
+3. `<文件名>_report.txt` — 详细处理报告（包含有效地块数、未闭合图形及面积汇总）。
+
+### 3. 配置说明
+
+默认配置文件位于 `config/default.yaml`，可自定义：
+
+- `input_layers`：指定 DXF 中哪些图层包含地块边界。默认扫描 `PARCEL` 和 `地块` 图层。
+- `strict_unit_check`：默认为 `true`。当 DXF 文件未定义单位时将停止执行，避免面积误算。
+- `annotation`：标注文字高度、图层名称等。
 
 ---
 

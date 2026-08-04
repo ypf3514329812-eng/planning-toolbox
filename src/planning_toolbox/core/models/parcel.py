@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
-from typing import Optional, Tuple, Any
-from shapely.geometry import Polygon, Point
+from dataclasses import dataclass
+from typing import Optional, Tuple
+from shapely.geometry import Polygon
 
 @dataclass
 class Parcel:
@@ -13,6 +13,7 @@ class Parcel:
     geometry: Optional[Polygon] = None
     label_point: Optional[Tuple[float, float]] = None
     error_message: Optional[str] = None
+    has_bulge_approximation: bool = False
 
     def to_dict(self) -> dict:
         return {

@@ -1,10 +1,14 @@
 from typing import Optional
+import logging
+
+logger = logging.getLogger("planning_toolbox")
 
 # AutoCAD DXF $INSUNITS mapping table
 INSUNITS_MAP = {
     0: "Unspecified",
     1: "Inches",
     2: "Feet",
+    3: "Miles",
     4: "Millimeters",
     5: "Centimeters",
     6: "Meters",
@@ -15,6 +19,8 @@ INSUNITS_MAP = {
 LINEAR_TO_METER = {
     "Meters": 1.0,
     "m": 1.0,
+    "Miles": 1609.344,
+    "mi": 1609.344,
     "Millimeters": 0.001,
     "mm": 0.001,
     "Centimeters": 0.01,
@@ -43,16 +49,28 @@ def resolve_unit(doc_unit_code: int, fallback_unit: Optional[str] = None, strict
     Resolves the unit name for spatial calculation.
     If unit is 0 (Unspecified):
       - If strict_check is True, raise UnitError.
-      - If fallback_unit is explicitly provided, return fallback_unit with warning flag.
+      - If fallback_unit is explicitly provided, return fallback_unit with a logged warning.
       - Otherwise, raise UnitError.
     """
     unit_name = INSUNITS_MAP.get(doc_unit_code, "Unspecified")
     if unit_name == "Unspecified":
         if strict_check:
-            raise UnitError("CAD document unit ($INSUNITS) is Unspecified (0). Strict unit checking is enabled.")
+            raise UnitError(
+                "CAD document unit ($INSUNITS) is Unspecified (0). "
+                "Strict unit checking is enabled. Please set the unit "
+                "in your DXF file or configuration."
+            )
         if fallback_unit:
+            logger.warning(
+                f"DXF unit ($INSUNITS) is Unspecified. "
+                f"Using fallback unit '{fallback_unit}' from configuration. "
+                f"Area calculations assume 1 CAD unit = 1 {fallback_unit}."
+            )
             return fallback_unit
-        raise UnitError("CAD document unit is Unspecified and no fallback unit was provided. Cannot compute area safely.")
+        raise UnitError(
+            "CAD document unit is Unspecified and no fallback unit was provided. "
+            "Cannot compute area safely."
+        )
     return unit_name
 
 def get_area_scale_to_m2(unit_name: str) -> float:

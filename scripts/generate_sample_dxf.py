@@ -31,7 +31,7 @@ def create_sample_dxf(output_path: Path | str):
     # 5. Parcel 5: Polygon with Bulge Arc (Rounded corner parcel)
     p5 = [(0, -200), (100, -200), (100, -300), (0, -300)]
     poly5 = msp.add_lwpolyline(p5, dxfattribs={"layer": "PARCEL"})
-    poly5[0] = (0, -200, 0, 0, 0.41421356237309515) # bulge = tan(pi/8)
+    poly5[0] = (0, -200, 0, 0, 0.41421356237309515) # bulge = tan(pi/8) -> 90-degree arc
     poly5.close(True)
 
     out_file = Path(output_path)
