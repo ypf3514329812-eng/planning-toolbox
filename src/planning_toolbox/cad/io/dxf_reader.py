@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 import ezdxf
 from planning_toolbox.core.units.unit_manager import get_dxf_unit_code, resolve_unit, get_area_scale_to_m2
 
@@ -9,8 +9,8 @@ class DXFReadError(Exception):
 def read_dxf_parcels(
     dxf_path: Path | str,
     target_layers: List[Any],
-    fallback_unit: str = "m",
-    strict_unit_check: bool = False
+    fallback_unit: Optional[str] = None,
+    strict_unit_check: bool = True
 ) -> Tuple[Any, List[Dict[str, Any]], str, float]:
     """
     Reads a DXF file and extracts candidate parcel polylines from target layers.

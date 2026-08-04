@@ -103,7 +103,13 @@ def standardize_dxf_layers(
 
     # 3. Save standardized DXF
     stem = path.stem
-    standardized_dxf_path = out_dir / f"{stem}_standardized.dxf"
+    standardized_dxf_path = (out_dir / f"{stem}_standardized.dxf").resolve()
+
+    if standardized_dxf_path == path.resolve():
+        raise ValueError(
+            f"Output DXF path ({standardized_dxf_path}) cannot be identical to source DXF path ({path.resolve()}). "
+            f"Direct overwrite is forbidden for data safety."
+        )
     doc.saveas(standardized_dxf_path)
 
     # 4. Generate Layer Analysis & Remap Report

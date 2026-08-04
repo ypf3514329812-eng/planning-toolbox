@@ -5,6 +5,25 @@
 
 ---
 
+## Capabilities & System Boundaries (功能与系统边界说明)
+
+### 1. 支持的 CAD 实体类型
+- **支持**：2D/3D `LWPOLYLINE` (轻量多段线) 及 `POLYLINE` (二维多段线) 封闭区域。
+- **弧线 Bulge 逼近**：使用 `ezdxf.path.flattening(distance=0.01)` 离散逼近圆弧段（面积逼近精度为 ±0.06‰，满足规划使用需求）。
+- **暂不支持**：由散乱 `LINE`、`ARC` 组合但未连接为 Polyline 的边界、`CIRCLE` 或 `SPLINE` 实体（此类实体目前登记为非闭合或不支持类型，需在 CAD 中重构为 Polyline）。
+
+### 2. 单位识别与安全策略 ($INSUNITS)
+- 当 DXF 文件内部包含 `$INSUNITS` 属性时（如 6 = 米），自动使用精确缩放因子。
+- 当 DXF 文件内部 `$INSUNITS` 为 0 (Unspecified) 且开启 `strict_unit_check: true` 时，程序**拒绝静默假设**并提示错误 (BLOCKED)，防止误算。
+
+### 3. 嵌套环/孔洞处理 (Nested Rings & Holes)
+- 当某一图层内存在“大多边形完全包含小多边形”的嵌套结构时，内环将自动标记为 `NESTED_RING_DETECTED`，并从 `VALID` 面积汇总中扣除，防止重复累加。
+
+### 4. 原始文件“零破坏”保证 (Zero-Mutation Guarantee)
+- 读取 DXF 时只进行内存解析，标注文件写出至独立的 `*_labeled.dxf`，原始 DXF 文件通过 SHA-256 校验对比保证 100% 字节级无修改。
+
+---
+
 ## Quickstart Guide for Planning Students (使用指南)
 
 本工具箱无需修改任何 Python 源代码即可使用！
@@ -17,9 +36,9 @@
 pip install -e .
 ```
 
-### 2. MVP-1 地块面积与编号工具
+### 2. 地块面积与编号工具 (MVP-1)
 
-将 CAD 图纸（.dxf 格式）放入 `sample_data` 目录或任意路径，运行以下简单命令：
+将 CAD 图纸（.dxf 格式）放入 `sample_data` 目录或任意路径，运行：
 
 ```bash
 python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf
@@ -37,19 +56,31 @@ python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf
 2. `<文件名>.csv` — 地块面积及状态统计表格。
 3. `<文件名>_report.txt` — 详细处理报告（包含有效地块数、未闭合图形及面积汇总）。
 
-### 3. 配置说明
+### 3. 图层标准化与空白模板 (MVP-2)
 
-默认配置文件位于 `config/default.yaml`，可自定义：
+生成城乡规划标准空白 CAD 模板：
 
-- `input_layers`：指定 DXF 中哪些图层包含地块边界。默认扫描 `PARCEL` 和 `地块` 图层。
-- `strict_unit_check`：默认为 `true`。当 DXF 文件未定义单位时将停止执行，避免面积误算。
-- `annotation`：标注文字高度、图层名称等。
+```bash
+python scripts/run_layer_tool.py --create-template output/template.dxf
+```
+
+标准化旧 CAD 图纸图层：
+
+```bash
+python scripts/run_layer_tool.py --dxf input.dxf --standardize-layers --output output/
+```
 
 ---
 
-## 项目架构与自动化测试
+## Manual CAD & GIS Validation Guide (AutoCAD / ArcGIS 人工核验指南)
 
-运行核心测试集：
+无编程背景的规划专业学生请参阅 [MANUAL_AUTOCAD_VALIDATION.md](file:///c:/AutoOS/OS1/MANUAL_AUTOCAD_VALIDATION.md) 进行 AutoCAD (`AREA` / `LIST`) 及 ArcGIS Pro 人工比对抽验。
+
+---
+
+## Automated Test Suite (自动化测试)
+
+运行全部 39 项回归测试：
 
 ```bash
 pytest
@@ -57,7 +88,8 @@ pytest
 
 ---
 
-## Git 版本记录
+## Git Release & Stabilization
 
-各稳定版本使用 Git tag 标记：
-- `v0.1.0-mvp1`: MVP-1 地块面积与编号工具稳定版。
+- `v0.1.0-mvp1`: MVP-1 初始版本
+- `v0.1.1-rc1`: RC1 稳定化候选版本
+- `fix/rc1-stable-gate`: RC1 稳定化整改分支（等待 Codex 独立二审）

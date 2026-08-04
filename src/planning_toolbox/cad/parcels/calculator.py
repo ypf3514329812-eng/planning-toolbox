@@ -6,6 +6,28 @@ from planning_toolbox.core.geometry.parser import points_from_dxf_polyline, pars
 from planning_toolbox.cad.io.dxf_reader import read_dxf_parcels
 from planning_toolbox.cad.annotation.dxf_writer import export_labeled_dxf
 
+def detect_nested_rings(candidate_valid_parcels: List[Parcel]) -> None:
+    """
+    Detects if any closed parcel ring is completely contained inside another parcel ring.
+    Marks contained inner rings with status 'NESTED_RING_DETECTED' and sets error message
+    to prevent false area summation.
+    """
+    for outer in candidate_valid_parcels:
+        for inner in candidate_valid_parcels:
+            if outer is not inner and outer.status == "VALID" and inner.status == "VALID":
+                if outer.geometry and inner.geometry:
+                    # True containment: outer contains inner, they don't merely touch boundaries, and outer area > inner area
+                    if (
+                        outer.geometry.contains(inner.geometry) and
+                        not outer.geometry.touches(inner.geometry) and
+                        outer.geometry.area > inner.geometry.area
+                    ):
+                        inner.status = "NESTED_RING_DETECTED"
+                        inner.error_message = (
+                            f"Nested ring detected inside parcel {outer.parcel_id}. "
+                            f"Requires manual inspection or multi-ring hole semantics."
+                        )
+
 def process_parcels(
     dxf_path: Path | str,
     config: Dict[str, Any],
@@ -23,8 +45,8 @@ def process_parcels(
 
     parcel_cfg = config.get("parcel", {})
     input_layers = parcel_cfg.get("input_layers", ["PARCEL"])
-    fallback_unit = parcel_cfg.get("fallback_unit", "m")
-    strict_unit = parcel_cfg.get("strict_unit_check", False)
+    fallback_unit = parcel_cfg.get("fallback_unit", None)
+    strict_unit = parcel_cfg.get("strict_unit_check", True)
     prefix = parcel_cfg.get("id_prefix", "P")
     digits = parcel_cfg.get("id_digits", 3)
 
@@ -66,26 +88,34 @@ def process_parcels(
         raw_parcels.append(parcel)
 
     # 3. Deterministic Sorting & ID Assignment
-    # Sort valid parcels by min_y (top to bottom), then min_x (left to right)
     def sort_key(p: Parcel):
         if p.geometry:
             minx, miny, maxx, maxy = p.geometry.bounds
             return (-maxy, minx)
         return (float('inf'), float('inf'))
 
-    valid_parcels = [p for p in raw_parcels if p.status == "VALID"]
+    candidate_valid = [p for p in raw_parcels if p.status == "VALID"]
     invalid_parcels = [p for p in raw_parcels if p.status != "VALID"]
 
-    valid_parcels.sort(key=sort_key)
+    candidate_valid.sort(key=sort_key)
 
-    all_parcels: List[Parcel] = []
-    for i, p in enumerate(valid_parcels, start=1):
+    # Assign initial IDs to valid candidates before nested ring detection
+    for i, p in enumerate(candidate_valid, start=1):
         p.parcel_id = f"{prefix}{i:0{digits}d}"
-        all_parcels.append(p)
 
-    for i, p in enumerate(invalid_parcels, start=1):
+    # Detect Nested Rings / Holes
+    detect_nested_rings(candidate_valid)
+
+    # Re-separate final valid vs nested/invalid parcels
+    final_valid_parcels = [p for p in candidate_valid if p.status == "VALID"]
+    nested_parcels = [p for p in candidate_valid if p.status == "NESTED_RING_DETECTED"]
+
+    # Re-assign error IDs for non-valid entities
+    all_non_valid = invalid_parcels + nested_parcels
+    for i, p in enumerate(all_non_valid, start=1):
         p.parcel_id = f"{prefix}_ERR_{i:02d}"
-        all_parcels.append(p)
+
+    all_parcels: List[Parcel] = final_valid_parcels + all_non_valid
 
     # 4. Generate Output CSV
     stem = dxf_path.stem
@@ -98,11 +128,11 @@ def process_parcels(
         for p in all_parcels:
             writer.writerow(p.to_dict())
 
-    # 5. Generate Labeled DXF
+    # 5. Generate Labeled DXF (Label only true valid parcels)
     labeled_dxf_path = output_dir_path / f"{stem}_labeled.dxf"
     export_labeled_dxf(
         doc=doc,
-        parcels=valid_parcels,
+        parcels=final_valid_parcels,
         output_path=labeled_dxf_path,
         annotation_config=parcel_cfg.get("annotation", {})
     )
@@ -110,9 +140,10 @@ def process_parcels(
     # 6. Generate Summary Text Report
     open_count = sum(1 for p in raw_parcels if p.status == "OPEN")
     invalid_geom_count = sum(1 for p in raw_parcels if p.status in ("INVALID_GEOMETRY", "ZERO_AREA"))
-    valid_count = len(valid_parcels)
-    total_valid_m2 = sum(p.area_m2 for p in valid_parcels)
-    total_valid_ha = sum(p.area_ha for p in valid_parcels)
+    nested_count = len(nested_parcels)
+    valid_count = len(final_valid_parcels)
+    total_valid_m2 = sum(p.area_m2 for p in final_valid_parcels)
+    total_valid_ha = sum(p.area_ha for p in final_valid_parcels)
 
     report_path = output_dir_path / f"{stem}_report.txt"
     report_content = (
@@ -125,6 +156,7 @@ def process_parcels(
         f"Valid closed parcels: {valid_count}\n"
         f"Open polylines: {open_count}\n"
         f"Invalid geometry: {invalid_geom_count}\n"
+        f"Nested/ambiguous rings: {nested_count}\n"
         f"-----------------------------------------------\n"
         f"Total valid area:\n"
         f"  {total_valid_m2:,.2f} m²\n"

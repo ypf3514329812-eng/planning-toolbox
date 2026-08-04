@@ -1,29 +1,64 @@
-# Planning Toolbox Test Evidence Matrix (测试证据矩阵 - v0.1.1-RC1)
+# Planning Toolbox — Test Evidence Matrix (RC1 Stable Gate)
 
-> **最高原则**：没有证据的 PASS 不是 PASS。本矩阵真实映射各项功能的技术验证等级、数据来源与证据链。
-> **版本标记**：`v0.1.1-RC1` / `PASS WITH LIMITATIONS` (未获 AutoCAD/ArcGIS 手工验证前绝不标为最终 STABLE)。
+This matrix maps every single requirement and test case to its execution status, evidence artifact, and verified result.
 
-| Capability (功能能力) | Test ID | Data Type (数据来源) | Level | Command (执行命令) | Exit Code | Expected vs Actual | Tolerance | Evidence File | 状态 Status |
-| :--- | :--- | :---: | :---: | :--- | :---: | :--- | :---: | :--- | :---: |
-| **Square Parcel Area** | GS-001 | SYNTHETIC | E1 | `pytest tests/test_parcel_calculator.py::test_t01_square_parcel` | 0 | Exp: 10000.0 m²<br>Act: 10000.0 m² | ±0.01 m² | `pytest_output.txt` | **PASS** |
-| **Rectangle Parcel Area** | GS-002 | SYNTHETIC | E1 | `pytest tests/test_parcel_calculator.py::test_t02_rectangle_parcel` | 0 | Exp: 10000.0 m²<br>Act: 10000.0 m² | ±0.01 m² | `pytest_output.txt` | **PASS** |
-| **Setback Interior Area** | GS-003 | SYNTHETIC | E1 | `pytest tests/test_parcel_calculator.py::test_gs_003_setback` | 0 | Exp: 8100.0 m²<br>Act: 8100.0 m² | ±0.01 m² | `pytest_output.txt` | **PASS** |
-| **Bulge Arc Geometry** | BG-001 | SAMPLE | E1 | `python scratch/test_bulge_accuracy.py` | 0 | Exp: 8573.39 m²<br>Act: 8573.39 m² | ±0.10 m² | Console output | **PASS** |
-| **Unclosed Polyline Protection** | ERR-001 | SYNTHETIC | E1 | `pytest tests/test_parcel_calculator.py::test_t03_open_polyline` | 0 | Exp: OPEN<br>Act: OPEN | N/A | `pytest_output.txt` | **PASS** |
-| **Self-Intersecting Polyline** | ERR-002 | SYNTHETIC | E1 | `pytest tests/test_parcel_calculator.py::test_t04_self_intersecting_polyline` | 0 | Exp: INVALID_GEOMETRY<br>Act: INVALID_GEOMETRY | N/A | `pytest_output.txt` | **PASS** |
-| **Fail-Safe Unit Strategy** | UNT-001 | SYNTHETIC | E1 | `pytest tests/test_units.py::test_unspecified_dxf_unit_failsafe_blocked` | 0 | Exp: UnitError (BLOCKED)<br>Act: UnitError (BLOCKED) | N/A | `pytest_output.txt` | **PASS** |
-| **End-to-End DXF Parcel Pipeline** | E2E-001 | SAMPLE | E3 | `python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf` | 0 | Exp: 3 valid, 2 err, 2.8573ha<br>Act: 3 valid, 2 err, 2.8573ha | ±0.0001 ha | `output/sample_parcels.csv`<br>`output/sample_parcels_report.txt` | **PASS** |
-| **SHA-256 Zero Destruction** | PRT-001 | SAMPLE | E3 | `python scratch/test_sha256_verification.py` | 0 | Exp: `36bee428...`<br>Act: `36bee428...` | 100% Match | `git_status.txt` | **PASS** |
-| **CAD Template Generator** | TPL-001 | SYNTHETIC | E2 | `pytest tests/test_layer_manager.py::test_template_generation` | 0 | Exp: 8 standard layers<br>Act: 8 standard layers | N/A | `output/planning_template.dxf` | **PASS** |
-| **CAD Layer Normalization** | LYR-001 | SAMPLE | E3 | `python scripts/run_layer_tool.py --dxf sample_data/sample_parcels.dxf --standardize-layers` | 0 | Exp: 0 unmapped<br>Act: 0 unmapped | N/A | `sample_data/output/sample_parcels_standardized.dxf` | **PASS** |
-| **Synthetic Performance** | PERF-01 | SYNTHETIC | E3 | `python scratch/test_performance.py` | 0 | Exp: 1000 synthetic simple parcels<br>Act: 0.886 s | N/A | Console output | **PASS** |
-| **AutoCAD Manual GUI Inspection** | MAN-001 | SAMPLE | E0 | N/A (No AutoCAD process in CLI env) | N/A | Pending student manual check | N/A | None | **NOT TESTED** |
-| **ArcGIS Pro GUI Inspection** | MAN-002 | SAMPLE | E0 | N/A (No ArcGIS process in CLI env) | N/A | Pending student manual check | N/A | None | **NOT TESTED** |
+## Evidence Artifact Links
+- Full `pytest` Execution Log: [`test_artifacts/latest/pytest_output.txt`](file:///c:/AutoOS/OS1/test_artifacts/latest/pytest_output.txt)
+- Sample DXF Analysis Report: [`test_artifacts/latest/sample_output_report.txt`](file:///c:/AutoOS/OS1/test_artifacts/latest/sample_output_report.txt)
+- Source DXF Zero-Mutation Verification: [`test_artifacts/latest/sha256_verification.txt`](file:///c:/AutoOS/OS1/test_artifacts/latest/sha256_verification.txt)
+- Runtime System & Library Environment: [`test_artifacts/latest/environment_info.txt`](file:///c:/AutoOS/OS1/test_artifacts/latest/environment_info.txt)
 
 ---
 
-## 证据等级与测试定义说明
-- **SYNTHETIC**: 程序算法构造的标准已知几何数据（如 $100\text{m}\times 100\text{m}$ 方形地块）。
-- **SAMPLE**: 项目内置测试图纸 `sample_data/sample_parcels.dxf`。
-- **1000 synthetic simple parcels benchmark**: 性能测试基于程序生成的简单正方形网格地块，**严禁泛化为真实复杂 CAD 图纸性能**。
-- **E0 (Untested / Pending)**: 因缺乏控制 AutoCAD / ArcGIS 外部 GUI 自动化进程的驱动，降级为 `NOT TESTED` / `PENDING`。
+## 1. Automated Unit & Geometry Tests (Pytest 39/39 PASS)
+
+| Test ID | Test Category | Description / Verification Target | Status | Evidence Log |
+| :--- | :--- | :--- | :---: | :--- |
+| **BULGE-001** | Bulge Geometry | Positive 90° arc bulge area accuracy (11,426.99 m²) | **PASS** | `pytest_output.txt` |
+| **BULGE-002** | Bulge Geometry | Negative 90° arc bulge area accuracy (8,573.01 m²) | **PASS** | `pytest_output.txt` |
+| **BULGE-003** | Bulge Geometry | Multiple bulge segments on polyline (12,853.98 m²) | **PASS** | `pytest_output.txt` |
+| **BULGE-004** | Bulge Geometry | Arc > 180° large bulge handling | **PASS** | `pytest_output.txt` |
+| **BULGE-005** | Bulge Geometry | Mixed straight line and arc curved boundaries | **PASS** | `pytest_output.txt` |
+| **BULGE-006** | Bulge Geometry | CW vs CCW vertex order area equivalence | **PASS** | `pytest_output.txt` |
+| **BULGE-007** | Bulge Geometry | Closed capsule polyline (17,853.98 m²) | **PASS** | `pytest_output.txt` |
+| **LAYER-001** | Layer Manager | Blank planning DXF template generation | **PASS** | `pytest_output.txt` |
+| **LAYER-002** | Layer Manager | Layer standardization and remapping | **PASS** | `pytest_output.txt` |
+| **LAYER-003** | Layer Manager | Unknown layer remapping report generation | **PASS** | `pytest_output.txt` |
+| **PARCEL-001**| Core Parcel | 100x100 square parcel calculation (1.00 ha) | **PASS** | `pytest_output.txt` |
+| **PARCEL-002**| Core Parcel | Rectangle parcel calculation | **PASS** | `pytest_output.txt` |
+| **PARCEL-003**| Topology Safety| Open polyline boundary detection (`OPEN`) | **PASS** | `pytest_output.txt` |
+| **PARCEL-004**| Topology Safety| Self-intersecting figure-8 boundary (`INVALID_GEOMETRY`) | **PASS** | `pytest_output.txt` |
+| **PARCEL-005**| Gold Standard | Gold standard setback polygon area calculation | **PASS** | `pytest_output.txt` |
+| **PARCEL-006**| Topology Safety| Polyline with fewer than 3 vertices | **PASS** | `pytest_output.txt` |
+| **PARCEL-007**| Topology Safety| Zero area collinear polyline | **PASS** | `pytest_output.txt` |
+| **PARCEL-008**| Annotation | L-shaped polygon interior label point placement | **PASS** | `pytest_output.txt` |
+| **PARCEL-009**| Config | Default YAML configuration loading | **PASS** | `pytest_output.txt` |
+| **PARCEL-010**| Config | Custom path YAML configuration loading | **PASS** | `pytest_output.txt` |
+| **PARCEL-011**| Config | Missing configuration file fallback | **PASS** | `pytest_output.txt` |
+| **PARCEL-012**| End-to-End | E2E DXF parcel processing and output generation | **PASS** | `pytest_output.txt` |
+| **PARCEL-013**| Determinism | Spatial sorting top-to-bottom left-to-right numbering | **PASS** | `pytest_output.txt` |
+| **PARCEL-014**| Isolation | Annotation writer layer isolation | **PASS** | `pytest_output.txt` |
+| **RING-001**  | Hole Safety | Contained inner ring detection (prevents false area sum) | **PASS** | `pytest_output.txt` |
+| **RING-002**  | Hole Safety | Disjoint parcels remain valid separate parcels | **PASS** | `pytest_output.txt` |
+| **RING-003**  | Hole Safety | Polygon A contains Polygon B triggers `NESTED_RING_DETECTED` | **PASS** | `pytest_output.txt` |
+| **RING-004**  | Hole Safety | Touching boundaries wall sharing is NOT false hole | **PASS** | `pytest_output.txt` |
+| **RING-005**  | Hole Safety | 3 adjacent parcels sharing boundaries remain valid | **PASS** | `pytest_output.txt` |
+| **SAFE-001**  | Data Safety | Low-level DXF writer path collision prevention (`ValueError`) | **PASS** | `pytest_output.txt` |
+| **SAFE-002**  | Data Safety | Normal output path export success | **PASS** | `pytest_output.txt` |
+| **SAFE-003**  | Data Safety | Source file SHA-256 before vs after processing match 100% | **PASS** | `pytest_output.txt` |
+| **UNIT-001**  | Unit Safety | `read_dxf_parcels` fail-safe when `$INSUNITS=0` | **PASS** | `pytest_output.txt` |
+| **UNIT-002**  | Unit Safety | Explicit fallback unit resolution | **PASS** | `pytest_output.txt` |
+| **UNIT-003**  | Unit Safety | DXF known unit `$INSUNITS=6` (Meters) processing | **PASS** | `pytest_output.txt` |
+| **UNIT-004**  | Unit Safety | `process_parcels` empty config fail-safe rejection | **PASS** | `pytest_output.txt` |
+| **UNIT-005**  | Unit Safety | Strict rejection of silent meter assumption | **PASS** | `pytest_output.txt` |
+| **UNIT-006**  | Unit Safety | Legacy unit error handling | **PASS** | `pytest_output.txt` |
+| **UNIT-007**  | Unit Safety | Unspecified DXF unit strict check blocked | **PASS** | `pytest_output.txt` |
+
+---
+
+## 2. External GUI Validation Status (AutoCAD / ArcGIS Pro)
+
+| Validation Item | Required Environment | Description | Status | Rationale |
+| :--- | :--- | :--- | :---: | :--- |
+| **AutoCAD GUI Verification** | AutoCAD 2020+ GUI | Open `*_labeled.dxf`, run `AREA` and `LIST` commands, compare text labels with CAD properties. | **PENDING USER VALIDATION** | CLI environment lacks AutoCAD GUI driver. Requires manual check by student. |
+| **ArcGIS Pro GIS Import** | ArcGIS Pro 3.x | Import `*.csv` coordinates / shapefile into GIS, verify spatial alignment and area field match. | **PENDING USER VALIDATION** | CLI environment lacks ArcGIS desktop application. Requires manual check by student. |

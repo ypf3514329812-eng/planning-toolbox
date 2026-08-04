@@ -264,3 +264,207 @@ def test_dxf_writer_isolation(tmp_path):
     # Verify that the original PARCEL layer polylines still exist
     parcel_entities = [e for e in labeled_doc.modelspace() if e.dxf.layer == "PARCEL"]
     assert len(parcel_entities) == 2  # Two original polylines preserved
+
+
+# ===== RING-001 to RING-005: Nested Ring / Hole Detection Tests =====
+
+def test_ring_001_nested_ring_prevents_false_sum(tmp_path):
+    """RING-001: 100x100 outer ring containing 20x20 inner ring must NOT sum to 10,400 m². Inner ring is flagged."""
+    dxf_path = tmp_path / "nested.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=1)
+    msp = doc.modelspace()
+
+    # Outer 100x100 (10,000 m²)
+    p_outer = msp.add_lwpolyline([(0, 100), (100, 100), (100, 0), (0, 0)], dxfattribs={"layer": "PARCEL"})
+    p_outer.close(True)
+
+    # Inner 20x20 (400 m²) inside outer
+    p_inner = msp.add_lwpolyline([(40, 60), (60, 60), (60, 40), (40, 40)], dxfattribs={"layer": "PARCEL"})
+    p_inner.close(True)
+
+    doc.saveas(dxf_path)
+
+    config = {
+        "parcel": {
+            "input_layers": ["PARCEL"],
+            "fallback_unit": "m",
+            "strict_unit_check": False,
+            "id_prefix": "P",
+            "id_digits": 3
+        },
+        "output": {"dir": str(tmp_path / "out")}
+    }
+
+    parcels, labeled_dxf, csv_file, report_file = process_parcels(dxf_path, config, tmp_path / "out")
+
+    valid_parcels = [p for p in parcels if p.status == "VALID"]
+    nested_parcels = [p for p in parcels if p.status == "NESTED_RING_DETECTED"]
+
+    # Verify only 1 valid parcel (the outer 10,000 m² square)
+    assert len(valid_parcels) == 1
+    assert valid_parcels[0].area_m2 == 10000.0
+
+    # Verify inner parcel is flagged as NESTED_RING_DETECTED
+    assert len(nested_parcels) == 1
+    assert "Nested ring detected" in nested_parcels[0].error_message
+
+    # Total valid sum must be exactly 10,000 m², NOT 10,400 m²
+    total_valid_m2 = sum(p.area_m2 for p in valid_parcels)
+    assert total_valid_m2 == 10000.0
+
+
+def test_ring_002_disjoint_parcels_remain_valid(tmp_path):
+    """RING-002: Two disjoint separate parcels remain valid independent parcels."""
+    dxf_path = tmp_path / "disjoint.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=1)
+    msp = doc.modelspace()
+
+    # Parcel 1: 100x100 at (0, 0)
+    p1 = msp.add_lwpolyline([(0, 100), (100, 100), (100, 0), (0, 0)], dxfattribs={"layer": "PARCEL"})
+    p1.close(True)
+
+    # Parcel 2: 50x50 at (200, 0)
+    p2 = msp.add_lwpolyline([(200, 50), (250, 50), (250, 0), (200, 0)], dxfattribs={"layer": "PARCEL"})
+    p2.close(True)
+
+    doc.saveas(dxf_path)
+
+    config = {"parcel": {"input_layers": ["PARCEL"], "fallback_unit": "m", "strict_unit_check": False}}
+    parcels, *_ = process_parcels(dxf_path, config, tmp_path / "out")
+
+    valid_parcels = [p for p in parcels if p.status == "VALID"]
+    assert len(valid_parcels) == 2
+
+
+def test_ring_003_polygon_contains_polygon_triggers_nested(tmp_path):
+    """RING-003: Polygon A contains Polygon B -> triggers NESTED_RING_DETECTED on B."""
+    dxf_path = tmp_path / "contains.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=1)
+    msp = doc.modelspace()
+
+    # Outer 200x200
+    p_a = msp.add_lwpolyline([(0, 200), (200, 200), (200, 0), (0, 0)], dxfattribs={"layer": "PARCEL"})
+    p_a.close(True)
+
+    # Inner 50x50
+    p_b = msp.add_lwpolyline([(50, 100), (100, 100), (100, 50), (50, 50)], dxfattribs={"layer": "PARCEL"})
+    p_b.close(True)
+
+    doc.saveas(dxf_path)
+
+    config = {"parcel": {"input_layers": ["PARCEL"], "fallback_unit": "m", "strict_unit_check": False}}
+    parcels, *_ = process_parcels(dxf_path, config, tmp_path / "out")
+
+    nested = [p for p in parcels if p.status == "NESTED_RING_DETECTED"]
+    assert len(nested) == 1
+
+
+def test_ring_004_touching_boundaries_not_hole(tmp_path):
+    """RING-004: Two parcels sharing a boundary wall are NOT flagged as nested holes."""
+    dxf_path = tmp_path / "touching.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=1)
+    msp = doc.modelspace()
+
+    # Parcel 1: 100x100 from (0,0) to (100,100)
+    p1 = msp.add_lwpolyline([(0, 100), (100, 100), (100, 0), (0, 0)], dxfattribs={"layer": "PARCEL"})
+    p1.close(True)
+
+    # Parcel 2: 100x100 touching Parcel 1 at x=100 line
+    p2 = msp.add_lwpolyline([(100, 100), (200, 100), (200, 0), (100, 0)], dxfattribs={"layer": "PARCEL"})
+    p2.close(True)
+
+    doc.saveas(dxf_path)
+
+    config = {"parcel": {"input_layers": ["PARCEL"], "fallback_unit": "m", "strict_unit_check": False}}
+    parcels, *_ = process_parcels(dxf_path, config, tmp_path / "out")
+
+    valid_parcels = [p for p in parcels if p.status == "VALID"]
+    nested_parcels = [p for p in parcels if p.status == "NESTED_RING_DETECTED"]
+
+    # Both parcels should remain VALID
+    assert len(valid_parcels) == 2
+    assert len(nested_parcels) == 0
+
+
+def test_ring_005_three_adjacent_parcels(tmp_path):
+    """RING-005: Three adjacent parcels sharing boundaries remain valid separate parcels."""
+    dxf_path = tmp_path / "three_adj.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=1)
+    msp = doc.modelspace()
+
+    p1 = msp.add_lwpolyline([(0, 50), (50, 50), (50, 0), (0, 0)], dxfattribs={"layer": "PARCEL"})
+    p1.close(True)
+
+    p2 = msp.add_lwpolyline([(50, 50), (100, 50), (100, 0), (50, 0)], dxfattribs={"layer": "PARCEL"})
+    p2.close(True)
+
+    p3 = msp.add_lwpolyline([(100, 50), (150, 50), (150, 0), (100, 0)], dxfattribs={"layer": "PARCEL"})
+    p3.close(True)
+
+    doc.saveas(dxf_path)
+
+    config = {"parcel": {"input_layers": ["PARCEL"], "fallback_unit": "m", "strict_unit_check": False}}
+    parcels, *_ = process_parcels(dxf_path, config, tmp_path / "out")
+
+    valid_parcels = [p for p in parcels if p.status == "VALID"]
+    assert len(valid_parcels) == 3
+
+
+# ===== SAFE-001 to SAFE-003: Source File Protection & Path Collision Tests =====
+
+def test_safe_001_path_collision_forbidden(tmp_path):
+    """SAFE-001: export_labeled_dxf must raise ValueError if output_path == source_path."""
+    dxf_path = tmp_path / "same_path.dxf"
+    _create_test_dxf(dxf_path, include_open=False)
+
+    doc = ezdxf.readfile(dxf_path)
+    parcels, *_ = process_parcels(dxf_path, {"parcel": {"input_layers": ["PARCEL"], "fallback_unit": "m", "strict_unit_check": False}}, tmp_path / "out")
+
+    from planning_toolbox.cad.annotation.dxf_writer import export_labeled_dxf
+    with pytest.raises(ValueError) as exc:
+        export_labeled_dxf(doc, parcels, dxf_path, {})
+    assert "Direct overwrite is forbidden" in str(exc.value)
+
+
+def test_safe_002_normal_different_output_path(tmp_path):
+    """SAFE-002: export_labeled_dxf succeeds when output_path is different from source_path."""
+    src_path = tmp_path / "source.dxf"
+    out_path = tmp_path / "different_labeled.dxf"
+    _create_test_dxf(src_path, include_open=False)
+
+    doc = ezdxf.readfile(src_path)
+    parcels, *_ = process_parcels(src_path, {"parcel": {"input_layers": ["PARCEL"], "fallback_unit": "m", "strict_unit_check": False}}, tmp_path / "out")
+
+    from planning_toolbox.cad.annotation.dxf_writer import export_labeled_dxf
+    result_path = export_labeled_dxf(doc, parcels, out_path, {})
+    assert result_path.exists()
+    assert result_path.resolve() != src_path.resolve()
+
+
+def test_safe_003_sha256_hash_match_before_after(tmp_path):
+    """SAFE-003: Source file SHA-256 hash before processing must match after processing 100%."""
+    import hashlib
+    src_path = tmp_path / "sha_check.dxf"
+    _create_test_dxf(src_path, include_open=True)
+
+    hash_before = hashlib.sha256(src_path.read_bytes()).hexdigest()
+    parcels, labeled_dxf, csv_file, report_file = process_parcels(
+        src_path,
+        {"parcel": {"input_layers": ["PARCEL"], "fallback_unit": "m", "strict_unit_check": False}},
+        tmp_path / "out"
+    )
+    hash_after = hashlib.sha256(src_path.read_bytes()).hexdigest()
+
+    assert hash_before == hash_after
+
+

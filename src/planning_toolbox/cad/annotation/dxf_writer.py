@@ -13,7 +13,19 @@ def export_labeled_dxf(
     Saves a new DXF file with parcel IDs and areas annotated inside each valid parcel.
     Does NOT modify or overwrite the original document file directly.
     """
-    out_file = Path(output_path)
+    out_file = Path(output_path).resolve()
+    if hasattr(doc, "filename") and doc.filename:
+        try:
+            src_file = Path(doc.filename).resolve()
+            if out_file == src_file:
+                raise ValueError(
+                    f"Output DXF path ({out_file}) cannot be identical to source DXF path ({src_file}). "
+                    f"Direct overwrite is forbidden for data safety."
+                )
+        except Exception as e:
+            if isinstance(e, ValueError):
+                raise
+
     out_file.parent.mkdir(parents=True, exist_ok=True)
 
     layer_name = annotation_config.get("layer_name", "PARCEL_LABEL")

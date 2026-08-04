@@ -7,6 +7,7 @@ Parcel candidates: 5
 Valid closed parcels: 3
 Open polylines: 1
 Invalid geometry: 1
+Nested/ambiguous rings: 0
 -----------------------------------------------
 Total valid area:
   28,573.39 m²
