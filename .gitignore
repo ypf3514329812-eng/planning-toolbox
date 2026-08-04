@@ -35,6 +35,8 @@ htmlcov/
 # Output files generated during runs
 output/*
 !output/.gitkeep
+sample_data/output/*
+scratch/*
 
 # IDEs
 .vscode/
