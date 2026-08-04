@@ -144,7 +144,8 @@ def test_end_to_end_dxf_processing(tmp_path):
     original_dxf = tmp_path / "test_site.dxf"
     _create_test_dxf(original_dxf)
 
-    # Record original mtime and size
+    import hashlib
+    sha256_before = hashlib.sha256(original_dxf.read_bytes()).hexdigest()
     orig_stat_before = original_dxf.stat()
 
     config = {
@@ -162,8 +163,10 @@ def test_end_to_end_dxf_processing(tmp_path):
     time.sleep(0.05)
     parcels, labeled_dxf, csv_file, report_file = process_parcels(original_dxf, config, tmp_path / "out")
 
-    # T07: Check original DXF was NOT modified
+    # T07: Check original DXF was NOT modified (SHA-256 hash & mtime/size check)
+    sha256_after = hashlib.sha256(original_dxf.read_bytes()).hexdigest()
     orig_stat_after = original_dxf.stat()
+    assert sha256_before == sha256_after, f"SHA-256 hash mismatch! Original file modified: {sha256_before} vs {sha256_after}"
     assert orig_stat_before.st_mtime == orig_stat_after.st_mtime
     assert orig_stat_before.st_size == orig_stat_after.st_size
     assert labeled_dxf.exists()

@@ -60,13 +60,17 @@ def test_standardize_dxf_layers(tmp_path):
     u1 = msp.add_line((0, 0), (10, 10), dxfattribs={"layer": "UNKNOWN_CUSTOM_LAYER"})
 
     doc.saveas(raw_dxf)
+    import hashlib
+    sha256_before = hashlib.sha256(raw_dxf.read_bytes()).hexdigest()
     orig_stat_before = raw_dxf.stat()
 
     cfg = load_layer_config()
     std_dxf, report_file, remapped_counts, unmapped = standardize_dxf_layers(raw_dxf, cfg, tmp_path / "out")
 
-    # Original file unmodified
+    # Original file unmodified (SHA-256 & mtime check)
+    sha256_after = hashlib.sha256(raw_dxf.read_bytes()).hexdigest()
     orig_stat_after = raw_dxf.stat()
+    assert sha256_before == sha256_after
     assert orig_stat_before.st_mtime == orig_stat_after.st_mtime
     assert std_dxf.exists()
 

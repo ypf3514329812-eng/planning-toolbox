@@ -10,11 +10,13 @@ parcel:
     - "地块"
 
   # Expected unit if DXF header ($INSUNITS) is undefined (0) or missing.
-  # Valid values: m, cm, mm, km, ft, in
-  fallback_unit: "m"
+  # Fail-Safe Policy: Set to null by default. If DXF unit is unknown and no
+  # unit is specified in config, calculation is BLOCKED to prevent false area output.
+  # Valid values when user specifies: m, cm, mm, km, ft, in
+  fallback_unit: null
 
   # Strict unit enforcement: if true and DXF unit is unknown, stop execution.
-  # Set to false only if you are certain all your DXF files use meters.
+  # Must remain true in production mode for fail-safe operation.
   strict_unit_check: true
 
   # Prefix for auto-numbered parcels

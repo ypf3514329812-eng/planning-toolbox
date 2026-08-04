@@ -20,3 +20,9 @@ def test_t08_unknown_unit_handling():
     mm_unit = resolve_unit(doc_unit_code=4, fallback_unit=None)
     assert mm_unit == "Millimeters"
     assert pytest.approx(get_area_scale_to_m2(mm_unit)) == 0.000001
+
+def test_unspecified_dxf_unit_failsafe_blocked():
+    """Fail-Safe Test: Unspecified DXF unit ($INSUNITS=0) without fallback MUST raise UnitError (BLOCKED)."""
+    with pytest.raises(UnitError) as exc:
+        resolve_unit(doc_unit_code=0, fallback_unit=None, strict_check=True)
+    assert "Unspecified" in str(exc.value)
