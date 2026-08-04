@@ -1,0 +1,29 @@
+# Planning Toolbox Default Configuration
+
+parcel:
+  # Target DXF layer(s) to scan for parcels
+  input_layers:
+    - PARCEL
+    - 地块
+    - 0
+
+  # Expected unit if DXF header ($INSUNITS) is undefined (0) or missing
+  # Valid values: m, cm, mm, ft, in (m = meter)
+  fallback_unit: "m"
+
+  # Strict unit enforcement: if true and DXF unit is unknown, stop execution
+  strict_unit_check: false
+
+  # Prefix for auto-numbered parcels
+  id_prefix: "P"
+  id_digits: 3
+
+  # DXF Labeling options
+  annotation:
+    layer_name: "PARCEL_LABEL"
+    text_height: 2.5
+    show_ha: true
+    show_m2: false
+
+output:
+  dir: "output"
