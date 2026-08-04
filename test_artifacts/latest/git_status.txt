@@ -1,0 +1,4 @@
+Branch: main
+HEAD Commit Hash: b1c71c075bcf6716d9d6c0b40b95577cc120b032
+Working Tree Status: Clean (untracked outputs in sample_data/output/)
+Tags: v0.1.0-mvp1, v0.1.1-optimized, v0.2.0-cad-layers

@@ -1,0 +1,6 @@
+﻿parcel_id,source_layer,area_m2,area_ha,geometry_status,error_message
+P001,PARCEL,10000.0,1.0,VALID,
+P002,PARCEL,10000.0,1.0,VALID,
+P003,PARCEL,8573.39,0.8573,VALID,
+P_ERR_01,PARCEL,0.0,0.0,OPEN,Polyline boundary is not closed.
+P_ERR_02,PARCEL,0.0,0.0,INVALID_GEOMETRY,Self-intersecting polyline boundary.

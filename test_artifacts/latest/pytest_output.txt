@@ -1,0 +1,29 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0 -- C:\Users\35143\anaconda3\python.exe
+cachedir: .pytest_cache
+rootdir: C:\AutoOS\OS1
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.10.0
+collecting ... collected 18 items
+
+tests/test_layer_manager.py::test_template_generation PASSED             [  5%]
+tests/test_layer_manager.py::test_layer_alias_mapping PASSED             [ 11%]
+tests/test_layer_manager.py::test_standardize_dxf_layers PASSED          [ 16%]
+tests/test_parcel_calculator.py::test_t01_square_parcel PASSED           [ 22%]
+tests/test_parcel_calculator.py::test_t02_rectangle_parcel PASSED        [ 27%]
+tests/test_parcel_calculator.py::test_t03_open_polyline PASSED           [ 33%]
+tests/test_parcel_calculator.py::test_t04_self_intersecting_polyline PASSED [ 38%]
+tests/test_parcel_calculator.py::test_gs_003_setback PASSED              [ 44%]
+tests/test_parcel_calculator.py::test_fewer_than_3_vertices PASSED       [ 50%]
+tests/test_parcel_calculator.py::test_zero_area_polygon PASSED           [ 55%]
+tests/test_parcel_calculator.py::test_l_shaped_polygon_interior_point PASSED [ 61%]
+tests/test_parcel_calculator.py::test_config_loader_default PASSED       [ 66%]
+tests/test_parcel_calculator.py::test_config_loader_custom_path PASSED   [ 72%]
+tests/test_parcel_calculator.py::test_config_loader_missing_file PASSED  [ 77%]
+tests/test_parcel_calculator.py::test_end_to_end_dxf_processing PASSED   [ 83%]
+tests/test_parcel_calculator.py::test_multi_parcel_deterministic_numbering PASSED [ 88%]
+tests/test_parcel_calculator.py::test_dxf_writer_isolation PASSED        [ 94%]
+tests/test_units.py::test_t08_unknown_unit_handling PASSED               [100%]
+
+============================= 18 passed in 2.14s ==============================
