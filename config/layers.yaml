@@ -1,0 +1,88 @@
+# Planning Toolbox Standard CAD Layer Configuration (城乡规划标准 CAD 图层规范)
+
+layers:
+  PARCEL:
+    name_cn: "地块红线"
+    color: 2         # Yellow
+    lineweight: 30   # 0.30mm
+    linetype: "Continuous"
+    aliases:
+      - "地块"
+      - "地块红线"
+      - "PARCEL_BOUND"
+      - "PARCEL_LINE"
+
+  ROAD_CENTER:
+    name_cn: "道路中心线"
+    color: 1         # Red
+    lineweight: 18   # 0.18mm
+    linetype: "CENTER"
+    aliases:
+      - "中心线"
+      - "道路中心线"
+      - "ROAD_CL"
+      - "CENTERLINE"
+
+  ROAD_REDLINE:
+    name_cn: "道路红线"
+    color: 1         # Red
+    lineweight: 25   # 0.25mm
+    linetype: "Continuous"
+    aliases:
+      - "道路红线"
+      - "红线"
+      - "ROAD_LINE"
+      - "ROAD_BOUNDARY"
+
+  BUILDING:
+    name_cn: "建筑轮廓"
+    color: 4         # Cyan
+    lineweight: 25   # 0.25mm
+    linetype: "Continuous"
+    aliases:
+      - "建筑"
+      - "建筑轮廓"
+      - "建筑基底"
+      - "BUILDING_FOOTPRINT"
+
+  SETBACK:
+    name_cn: "建筑退界线"
+    color: 6         # Magenta
+    lineweight: 18   # 0.18mm
+    linetype: "DASHED"
+    aliases:
+      - "退界线"
+      - "建筑退界"
+      - "SETBACK_LINE"
+
+  GREEN:
+    name_cn: "绿地范围"
+    color: 3         # Green
+    lineweight: 18   # 0.18mm
+    linetype: "Continuous"
+    aliases:
+      - "绿地"
+      - "绿化"
+      - "GREEN_SPACE"
+      - "PARK"
+
+  PARCEL_LABEL:
+    name_cn: "地块标注"
+    color: 2         # Yellow
+    lineweight: 18   # 0.18mm
+    linetype: "Continuous"
+    aliases:
+      - "地块编号"
+      - "地块标注"
+      - "PARCEL_TAG"
+
+  ANNOTATION:
+    name_cn: "规划注释"
+    color: 7         # White / Black
+    lineweight: 18   # 0.18mm
+    linetype: "Continuous"
+    aliases:
+      - "文字"
+      - "注释"
+      - "TEXT"
+      - "DIMENSION"
