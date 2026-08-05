@@ -4,6 +4,9 @@ import sys
 from pathlib import Path
 from planning_toolbox import __version__
 from planning_toolbox.config import load_config
+from planning_toolbox.core.units.unit_manager import (
+    get_dxf_unit_code, get_linear_scale_to_m, resolve_unit,
+)
 from planning_toolbox.utils.logger import setup_logger
 from planning_toolbox.utils.i18n import (
     format_section_header, format_section_footer,
@@ -113,7 +116,9 @@ def cmd_gis_import(args):
     out_dir.mkdir(parents=True, exist_ok=True)
     out_dxf = out_dir / f"{geojson_path.stem}_from_gis.dxf"
 
-    res_dxf, stats = import_geojson_to_dxf(geojson_path, out_dxf)
+    res_dxf, stats = import_geojson_to_dxf(
+        geojson_path, out_dxf, target_unit=args.unit
+    )
 
     print(format_section_header(TITLE_GIS_IMPORT))
     print(f"源 GeoJSON 文件:      {geojson_path}")
@@ -156,6 +161,8 @@ def cmd_indicator(args):
         cfg = {}
         if args.config:
             cfg = load_config(args.config)
+        if args.floors is not None:
+            cfg["default_floors"] = args.floors
         results, csv_file, report_file = process_dxf_indicators(
             dxf_path, config=cfg, output_dir=args.output
         )
@@ -182,6 +189,22 @@ def cmd_validate(args):
     doc = ezdxf.readfile(dxf_path)
     msp = doc.modelspace()
 
+    # Setback values are specified in meters, so the DXF unit must be known
+    # before any distance calculation is allowed.
+    cfg = load_config(args.config)
+    parcel_cfg = cfg.get("parcel", {})
+    fallback_unit = args.fallback_unit or parcel_cfg.get("fallback_unit")
+    strict_unit = parcel_cfg.get("strict_unit_check", True)
+    if args.fallback_unit:
+        # An explicit command-line fallback is an affirmative user choice.
+        strict_unit = False
+    unit_name = resolve_unit(
+        get_dxf_unit_code(doc),
+        fallback_unit=fallback_unit,
+        strict_check=strict_unit,
+    )
+    geometry_unit_to_m = get_linear_scale_to_m(unit_name)
+
     # 1. Topology Audit
     topology_results = []
     for idx, entity in enumerate(msp):
@@ -203,6 +226,8 @@ def cmd_validate(args):
     parcel_layer = getattr(args, 'parcel_layer', 'PARCEL').upper()
     building_layer = getattr(args, 'building_layer', 'BUILDING').upper()
     setback_m = args.setback
+    if setback_m < 0:
+        raise ValueError("建筑退线距离必须是非负数（米）。")
 
     parcel_polys = []
     building_polys = []
@@ -228,7 +253,14 @@ def cmd_validate(args):
     else:
         for idx, p_poly in enumerate(parcel_polys, start=1):
             pid = f"P{idx:03d}"
-            result = check_building_setback(p_poly, building_polys, setback_m, pid)
+            parcel_buildings = [b_poly for b_poly in building_polys if p_poly.intersects(b_poly)]
+            result = check_building_setback(
+                p_poly,
+                parcel_buildings,
+                required_setback_m=setback_m,
+                parcel_id=pid,
+                geometry_unit_to_m=geometry_unit_to_m,
+            )
             status_cn = {
                 "COMPLIANT": "[合规]", "VIOLATION": "[违规]", "NO_BUILDING": "[无建筑]"
             }.get(result.status, result.status)
@@ -294,6 +326,7 @@ def main():
     sp_gi = gis_sub.add_parser("import", help="导入 GeoJSON 至 CAD DXF")
     sp_gi.add_argument("--geojson", required=True, help="输入 GeoJSON 文件路径")
     sp_gi.add_argument("--output", default="output", help="输出目录路径")
+    sp_gi.add_argument("--unit", default=None, help="输出 DXF 的单位（例如 m、cm、mm）；未指定则保留为未知单位")
     sp_gi.set_defaults(func=cmd_gis_import)
 
     # ─── indicator ───
@@ -305,6 +338,7 @@ def main():
     sp_ind.add_argument("--total-building", type=float, default=0.0, help="总建筑面积 (m²)")
     sp_ind.add_argument("--green-area", type=float, default=0.0, help="绿地面积 (m²)")
     sp_ind.add_argument("--output", default="output", help="输出目录路径")
+    sp_ind.add_argument("--floors", type=float, default=None, help="DXF 建筑总面积的楼层倍数（必须明确指定）")
     sp_ind.set_defaults(func=cmd_indicator)
 
     # ─── validate ───
@@ -314,6 +348,8 @@ def main():
     sp_val.add_argument("--parcel-layer", default="PARCEL", help="地块图层名称 (默认: PARCEL)")
     sp_val.add_argument("--building-layer", default="BUILDING", help="建筑图层名称 (默认: BUILDING)")
     sp_val.add_argument("--output", default="output", help="输出目录路径")
+    sp_val.add_argument("--config", default=None, help="YAML 配置（可提供 fallback_unit）")
+    sp_val.add_argument("--fallback-unit", default=None, help="DXF 未声明单位时采用的单位，例如 m、cm、mm")
     sp_val.set_defaults(func=cmd_validate)
 
     # ─── Parse and dispatch ───

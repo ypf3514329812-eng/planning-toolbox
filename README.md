@@ -79,15 +79,17 @@ planning-toolbox gis export --dxf sample_data/sample_parcels.dxf --output output
 ```
 将 GeoJSON 矢量文件导入为 CAD DXF 图纸：
 ```bash
-planning-toolbox gis import --geojson sample_data/sample_parcels.geojson --output output/
+planning-toolbox gis import --geojson sample_data/sample_parcels.geojson --output output/ --unit m
 ```
+GeoJSON 坐标不会自动转换。导出结果默认不声明 CRS；只有在确认坐标系且坐标已经完成转换时，才在配置中填写 `gis.crs`。导入带有 WGS84/经纬度声明的 GeoJSON 会被阻止，避免把经纬度误当作 CAD 米制坐标。
 *(向后兼容脚本: `python scripts/run_gis_bridge.py ...`)*
 
 #### D. 规划指标自动核算 (Planning Indicators)
 分析 CAD DXF 中的 `PARCEL`、`BUILDING`、`GREEN` 图层，核算容积率 (FAR)、建筑密度与绿地率：
 ```bash
-planning-toolbox indicator --dxf sample_data/sample_parcels.dxf --output output/
+planning-toolbox indicator --dxf sample_data/sample_parcels.dxf --floors 6 --output output/
 ```
+DXF 指标计算不再默认假设楼层数；存在 BUILDING 图层时必须通过 `--floors` 或配置项 `default_floors` 明确提供。
 单地块指标快速试算：
 ```bash
 planning-toolbox indicator --site-area 10000 --building-footprint 2500 --total-building 20000 --green-area 3500
@@ -107,7 +109,7 @@ planning-toolbox validate --dxf sample_data/sample_parcels.dxf --setback 5.0
 
 1. **`UNITS` 未设置警告 (`ERR_UNIT_UNKNOWN`)**
    - 当 CAD 图纸单位未明确设置 ($INSUNITS = 0) 时，工具箱将拦截执行以防误算。
-   - **解决办法**：在 AutoCAD 中打开图纸，输入 `UNITS` 命令将插入缩放单位设为【米】，重新保存 DXF；或在 `config/default.yaml` 中设置 `fallback_unit: 'm'`。
+   - **解决办法**：优先在 AutoCAD 中打开图纸，输入 `UNITS` 命令将插入缩放单位设为【米】，重新保存 DXF；如确实知道图纸单位，也可在配置中同时设置 `fallback_unit: 'm'` 与 `strict_unit_check: false`，或在校验命令中使用 `--fallback-unit m`。
 
 2. **PowerShell 权限问题**
    - 若在 Windows PowerShell 中出现“禁止运行脚本”提示，请以管理员身份打开 PowerShell 并运行：
@@ -123,7 +125,7 @@ planning-toolbox validate --dxf sample_data/sample_parcels.dxf --setback 5.0
 
 ## Automated Test Suite (自动化测试)
 
-运行全部 56 项回归测试：
+运行全部 65 项回归测试：
 
 ```bash
 pytest
@@ -138,5 +140,4 @@ pytest
 - `v0.2.0-gis-bridge`: Phase 2 GIS ↔ CAD 数据桥梁稳定版 (43/43 测试通过)
 - `v0.3.0-indicators`: Phase 3 规划指标自动核算引擎稳定版 (46/46 测试通过)
 - `v0.4.0-validators`: Phase 4 规则与拓扑检查引擎稳定版 (49/49 测试通过)
-- `v0.5.0-polish`: Phase 5 工程完善与 UX 升级版 (56/56 测试通过，修复 3 项 P0 关键 Bug，引入统一 CLI)
-
+- `v0.5.0-polish`: Phase 5 工程完善与 UX 升级版 (65/65 测试通过，引入统一 CLI)

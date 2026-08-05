@@ -1,5 +1,7 @@
 # Planning Toolbox — Test Evidence Matrix
 
+> 历史证据矩阵：当前版本的修复、命令行验收与 63 项测试结果见 [CODEX_REMEDIATION_REPORT.md](CODEX_REMEDIATION_REPORT.md)。
+
 This matrix maps every single requirement and test case to its execution status, evidence artifact, and verified result.
 
 ## Evidence Artifact Links

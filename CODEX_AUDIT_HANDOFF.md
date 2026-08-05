@@ -91,14 +91,14 @@ python -m pytest -v
 planning-toolbox parcel --dxf sample_data/sample_parcels.dxf --output output/
 
 # 验证指标引擎 (FAR, 密度, 绿地率)
-planning-toolbox indicator --dxf sample_data/sample_parcels.dxf --output output/
+planning-toolbox indicator --dxf sample_data/sample_parcels.dxf --floors 6 --output output/
 
 # 验证规则与退线检查
 planning-toolbox validate --dxf sample_data/sample_parcels.dxf --setback 5.0
 
 # 验证 GIS 桥接导出与导入
 planning-toolbox gis export --dxf sample_data/sample_parcels.dxf --output output/
-planning-toolbox gis import --geojson sample_data/sample_parcels.geojson --output output/
+planning-toolbox gis import --geojson sample_data/sample_parcels.geojson --output output/ --unit m
 ```
 
 ---

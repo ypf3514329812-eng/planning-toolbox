@@ -18,6 +18,8 @@ def main():
     parser.add_argument("--import-geojson", help="Path to input GeoJSON file to import into CAD DXF")
     parser.add_argument("--output", default="output", help="Output directory path (default: output)")
     parser.add_argument("--config", default=None, help="Path to custom YAML configuration file")
+    parser.add_argument("--unit", default=None,
+                        help="DXF output unit for GeoJSON import, e.g. m, cm, mm; omit to keep unit unknown")
 
     args = parser.parse_args()
 
@@ -46,7 +48,9 @@ def main():
         geojson_path = Path(args.import_geojson)
         print(f"[GIS Bridge] Importing GeoJSON file: {geojson_path}")
         out_dxf = out_dir / f"{geojson_path.stem}_from_gis.dxf"
-        res_dxf, stats = import_geojson_to_dxf(geojson_path, out_dxf)
+        res_dxf, stats = import_geojson_to_dxf(
+            geojson_path, out_dxf, target_unit=args.unit
+        )
         print("\n==========================================")
         print("   GIS GeoJSON 导入至 CAD 完成")
         print("==========================================")

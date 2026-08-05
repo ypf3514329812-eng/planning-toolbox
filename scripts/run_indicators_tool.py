@@ -18,6 +18,9 @@ def main():
     parser.add_argument("--green-area", type=float, default=0.0, help="Manual green area in m²")
     parser.add_argument("--output", default="output", help="Output directory path (default: output)")
 
+    parser.add_argument("--floors", type=float, default=None,
+                        help="DXF 建筑总面积的楼层倍数（必须明确指定）")
+
     args = parser.parse_args()
 
     if args.site_area is not None:
@@ -45,7 +48,10 @@ def main():
     if args.dxf:
         dxf_path = Path(args.dxf)
         print(f"[Indicators Tool] Analyzing CAD DXF indicators: {dxf_path}")
-        results, csv_file, report_file = process_dxf_indicators(dxf_path, output_dir=args.output)
+        config = {"default_floors": args.floors} if args.floors is not None else None
+        results, csv_file, report_file = process_dxf_indicators(
+            dxf_path, config=config, output_dir=args.output
+        )
         print("\n==========================================")
         print("   Planning Indicators DXF Analysis Done")
         print("==========================================")

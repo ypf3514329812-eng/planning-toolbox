@@ -9,10 +9,12 @@ from planning_toolbox.cad.annotation.dxf_writer import export_labeled_dxf
 def detect_nested_rings(candidate_valid_parcels: List[Parcel]) -> None:
     """
     Detects if any closed parcel ring is completely contained inside another parcel ring.
-    Marks contained inner rings with status 'NESTED_RING_DETECTED' and sets error message
-    to prevent false area summation.
+    Marks every ring involved with status 'NESTED_RING_DETECTED'. A standalone
+    DXF ring cannot distinguish a true hole from a deliberately nested parcel,
+    so both rings are excluded from totals until a human resolves the meaning.
     Uses bounding box pre-filtering to avoid O(N²) expensive geometry checks.
     """
+    nested_pairs = []
     for outer in candidate_valid_parcels:
         if outer.status != "VALID" or not outer.geometry:
             continue
@@ -29,11 +31,22 @@ def detect_nested_rings(candidate_valid_parcels: List[Parcel]) -> None:
             if (outer.geometry.contains(inner.geometry) and
                     not outer.geometry.touches(inner.geometry) and
                     outer.geometry.area > inner.geometry.area):
-                inner.status = "NESTED_RING_DETECTED"
-                inner.error_message = (
-                    f"Nested ring detected inside parcel {outer.parcel_id}. "
-                    f"Requires manual inspection or multi-ring hole semantics."
-                )
+                nested_pairs.append((outer, inner))
+
+    involved = []
+    involved_ids = set()
+    for pair in nested_pairs:
+        for parcel in pair:
+            if id(parcel) not in involved_ids:
+                involved.append(parcel)
+                involved_ids.add(id(parcel))
+    for parcel in involved:
+        parcel.status = "NESTED_RING_DETECTED"
+        parcel.error_message = (
+            "Nested/ambiguous ring detected. "
+            "Both rings are excluded from totals because DXF input does not "
+            "identify whether this is a hole or an independent nested parcel."
+        )
 
 def process_parcels(
     dxf_path: Path | str,
@@ -147,7 +160,13 @@ def process_parcels(
     # 5.5. Generate GeoJSON Export
     from planning_toolbox.gis.io.exporter import export_parcels_to_geojson
     geojson_path = output_dir_path / f"{stem}.geojson"
-    export_parcels_to_geojson(all_parcels, geojson_path)
+    gis_cfg = config.get("gis", {})
+    export_parcels_to_geojson(
+        all_parcels,
+        geojson_path,
+        crs_name=gis_cfg.get("crs"),
+        coordinate_units=unit_name,
+    )
 
     # 6. Generate Summary Text Report
     open_count = sum(1 for p in raw_parcels if p.status == "OPEN")

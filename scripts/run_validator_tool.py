@@ -11,6 +11,9 @@ from shapely.geometry import Polygon
 from planning_toolbox.validators.topology import validate_polyline_topology
 from planning_toolbox.validators.setback import check_building_setback
 from planning_toolbox.core.geometry.parser import points_from_dxf_polyline, parse_parcel_geometry
+from planning_toolbox.core.units.unit_manager import (
+    get_dxf_unit_code, get_linear_scale_to_m, resolve_unit,
+)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -26,6 +29,9 @@ def main():
     parser.add_argument("--output", default="output",
                         help="输出目录路径 (默认: output)")
 
+    parser.add_argument("--fallback-unit", default=None,
+                        help="DXF 未声明单位时采用的单位，例如 m、cm、mm")
+
     args = parser.parse_args()
 
     if not args.dxf:
@@ -36,6 +42,12 @@ def main():
     print(f"[拓扑检查工具] 正在检查 CAD 文件: {dxf_path}")
 
     doc = ezdxf.readfile(dxf_path)
+    unit_name = resolve_unit(
+        get_dxf_unit_code(doc),
+        fallback_unit=args.fallback_unit,
+        strict_check=args.fallback_unit is None,
+    )
+    geometry_unit_to_m = get_linear_scale_to_m(unit_name)
     msp = doc.modelspace()
 
     # === 1. Topology Audit ===
@@ -94,11 +106,13 @@ def main():
 
     for idx, parcel_poly in enumerate(parcel_polygons, start=1):
         pid = f"P{idx:03d}"
+        parcel_buildings = [b_poly for b_poly in building_polygons if parcel_poly.intersects(b_poly)]
         result = check_building_setback(
             parcel_polygon=parcel_poly,
-            building_polygons=building_polygons,
+            building_polygons=parcel_buildings,
             required_setback_m=args.setback,
-            parcel_id=pid
+            parcel_id=pid,
+            geometry_unit_to_m=geometry_unit_to_m,
         )
         status_cn = {
             "COMPLIANT": "[合规]",

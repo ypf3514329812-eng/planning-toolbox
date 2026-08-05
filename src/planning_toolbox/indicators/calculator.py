@@ -1,7 +1,9 @@
 import csv
+import math
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, Union
 import shapely.geometry
+from shapely.ops import unary_union
 from planning_toolbox.core.models.parcel import Parcel
 from planning_toolbox.indicators.models import PlanningParcelIndicators
 from planning_toolbox.cad.io.dxf_reader import read_dxf_parcels
@@ -18,6 +20,21 @@ def calculate_parcel_indicators(
     """
     Computes urban planning indicators (FAR, Building Density %, Green Ratio %) for a single parcel.
     """
+    values = {
+        "site_area_m2": site_area_m2,
+        "building_footprint_m2": building_footprint_m2,
+        "total_building_m2": total_building_m2,
+        "green_area_m2": green_area_m2,
+        "max_height_m": max_height_m,
+    }
+    for name, value in values.items():
+        if not math.isfinite(value) or value < 0:
+            raise ValueError(f"{name} must be a finite, non-negative number.")
+    if site_area_m2 > 0 and building_footprint_m2 > site_area_m2 + 1e-6:
+        raise ValueError("building_footprint_m2 cannot exceed site_area_m2.")
+    if site_area_m2 > 0 and green_area_m2 > site_area_m2 + 1e-6:
+        raise ValueError("green_area_m2 cannot exceed site_area_m2.")
+
     ind = PlanningParcelIndicators(
         parcel_id=parcel_id,
         site_area_m2=site_area_m2,
@@ -51,11 +68,16 @@ def process_dxf_indicators(
     out_dir = Path(output_dir) if output_dir else path.parent / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    cfg = config or {}
+    base_cfg = dict(config or {})
+    parcel_cfg = base_cfg.get("parcel", {})
+    cfg = {**parcel_cfg, **base_cfg}
     parcel_layer = cfg.get("parcel_layer", "PARCEL")
     building_layer = cfg.get("building_layer", "BUILDING")
     green_layer = cfg.get("green_layer", "GREEN")
-    default_floors = cfg.get("default_floors", 6)  # Default 6 floors if height not specified
+    default_floors = cfg.get("default_floors")
+    if default_floors is not None:
+        if not isinstance(default_floors, (int, float)) or not math.isfinite(default_floors) or default_floors <= 0:
+            raise ValueError("default_floors must be a positive, finite number when provided.")
 
     fallback_unit = cfg.get("fallback_unit", None)
     strict_unit = cfg.get("strict_unit_check", True)
@@ -86,6 +108,11 @@ def process_dxf_indicators(
             elif layer_upper == green_layer.upper():
                 green_geoms.append(poly)
 
+    if building_geoms and default_floors is None:
+        raise ValueError(
+            "DXF 指标计算发现建筑轮廓，但未提供楼层数；请通过 --floors 或配置项 default_floors 明确指定。"
+        )
+
     results: List[PlanningParcelIndicators] = []
 
     for pid, p_poly in parcel_geoms:
@@ -93,7 +120,7 @@ def process_dxf_indicators(
 
         # Calculate building footprint inside this parcel (bbox pre-filter)
         p_bounds = p_poly.bounds  # (minx, miny, maxx, maxy)
-        b_footprint = 0.0
+        building_pieces = []
         for b_poly in building_geoms:
             bb = b_poly.bounds
             # Skip if bounding boxes don't overlap
@@ -101,19 +128,23 @@ def process_dxf_indicators(
                 continue
             if p_poly.intersects(b_poly):
                 inter = p_poly.intersection(b_poly)
-                b_footprint += inter.area * scale
+                if not inter.is_empty:
+                    building_pieces.append(inter)
+        b_footprint = unary_union(building_pieces).area * scale if building_pieces else 0.0
 
         # Calculate green area inside this parcel (bbox pre-filter)
-        g_area = 0.0
+        green_pieces = []
         for g_poly in green_geoms:
             gb = g_poly.bounds
             if gb[2] < p_bounds[0] or gb[0] > p_bounds[2] or gb[3] < p_bounds[1] or gb[1] > p_bounds[3]:
                 continue
             if p_poly.intersects(g_poly):
                 inter = p_poly.intersection(g_poly)
-                g_area += inter.area * scale
+                if not inter.is_empty:
+                    green_pieces.append(inter)
+        g_area = unary_union(green_pieces).area * scale if green_pieces else 0.0
 
-        total_b_area = b_footprint * default_floors
+        total_b_area = b_footprint * default_floors if default_floors is not None else 0.0
 
         ind = calculate_parcel_indicators(
             parcel_id=pid,
@@ -144,6 +175,12 @@ def process_dxf_indicators(
         f.write(f"=== Planning Toolbox Urban Indicators Report ===\n")
         f.write(f"Source File: {path.name}\n")
         f.write(f"Parcels Analyzed: {len(results)}\n")
+        f.write(f"Detected CAD unit: {unit_name}\n")
+        f.write(f"Area scale to square meters: {scale:g}\n")
+        if default_floors is not None:
+            f.write(f"Building floor multiplier: {default_floors:g} (explicit input)\n")
+        else:
+            f.write("Building floor multiplier: not applicable (no building footprints)\n")
         f.write(f"---------------------------------------------------\n")
         for r in results:
             f.write(

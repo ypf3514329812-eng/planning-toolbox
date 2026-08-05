@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
+import math
 from shapely.geometry import Polygon, MultiPolygon
 
 @dataclass
@@ -16,18 +17,27 @@ def check_building_setback(
     parcel_polygon: Polygon,
     building_polygons: List[Polygon],
     required_setback_m: float,
-    parcel_id: str = "P001"
+    parcel_id: str = "P001",
+    geometry_unit_to_m: float = 1.0
 ) -> SetbackCheckResult:
     """
     Checks whether building footprints satisfy the required setback distance (建筑退线距离)
     from the parcel boundary red line (用地红线).
     
-    Computes setback polygon using negative buffer:
-      setback_polygon = parcel_polygon.buffer(-required_setback_m)
+    Computes setback polygon using negative buffer. ``required_setback_m`` is
+    always expressed in meters; ``geometry_unit_to_m`` converts the DXF
+    coordinate unit to meters before buffering.
       
     If any building footprint extends outside the setback polygon, it is flagged as a VIOLATION.
     Handles MultiPolygon results from irregular parcel shapes.
     """
+    if not math.isfinite(required_setback_m) or required_setback_m < 0:
+        raise ValueError("Required setback must be a finite, non-negative distance in meters.")
+    if not math.isfinite(geometry_unit_to_m) or geometry_unit_to_m <= 0:
+        raise ValueError("geometry_unit_to_m must be a positive, finite number.")
+
+    required_setback_units = required_setback_m / geometry_unit_to_m
+
     if not building_polygons:
         return SetbackCheckResult(
             parcel_id=parcel_id,
@@ -40,7 +50,7 @@ def check_building_setback(
         )
 
     # Compute interior setback boundary polygon
-    setback_poly = parcel_polygon.buffer(-required_setback_m)
+    setback_poly = parcel_polygon.buffer(-required_setback_units)
     if setback_poly.is_empty:
         return SetbackCheckResult(
             parcel_id=parcel_id,
@@ -57,7 +67,7 @@ def check_building_setback(
 
     for b_poly in building_polygons:
         # Distance from building to parcel boundary
-        dist = b_poly.distance(parcel_polygon.exterior)
+        dist = b_poly.distance(parcel_polygon.boundary) * geometry_unit_to_m
         if dist < min_dist_to_boundary:
             min_dist_to_boundary = dist
 

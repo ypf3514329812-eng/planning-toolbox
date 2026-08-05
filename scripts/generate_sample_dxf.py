@@ -94,9 +94,10 @@ def generate_sample_geojson(output_path: str = "sample_data/sample_parcels.geojs
     geojson = {
         "type": "FeatureCollection",
         "name": "sample_parcels",
-        "crs": {
-            "type": "name",
-            "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}
+        "planning_toolbox_metadata": {
+            "coordinate_reference_system": "UNKNOWN",
+            "coordinate_units": "Meters",
+            "coordinate_transform_applied": False,
         },
         "features": [
             {

@@ -1,16 +1,23 @@
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 import shapely.geometry
 from planning_toolbox.core.models.parcel import Parcel
 
 def export_parcels_to_geojson(
     parcels: List[Parcel],
     output_path: Union[Path, str],
-    crs_name: str = "EPSG:4326"
+    crs_name: Optional[str] = None,
+    coordinate_units: Optional[str] = None,
 ) -> Path:
     """
-    Exports a list of Parcel objects to an RFC 7946 compliant GeoJSON FeatureCollection file.
+    Exports a list of Parcel objects to a GeoJSON FeatureCollection file.
+
+    No CRS is declared by default. CAD coordinates are often local/projected
+    coordinates, and labeling them as WGS84 without a transformation would
+    make the output look valid while placing it in the wrong location. When a
+    caller has independently verified the CRS, it may pass ``crs_name``; this
+    function labels coordinates but does not transform them.
     
     Includes feature properties:
       - parcel_id
@@ -39,8 +46,8 @@ def export_parcels_to_geojson(
             "properties": {
                 "parcel_id": parcel.parcel_id,
                 "source_layer": parcel.source_layer,
-                "area_m2": round(parcel.area_m2, 2),
-                "area_ha": round(parcel.area_ha, 4),
+                "area_m2": round(parcel.area_m2, 2) if parcel.status == "VALID" else 0.0,
+                "area_ha": round(parcel.area_ha, 4) if parcel.status == "VALID" else 0.0,
                 "geometry_status": parcel.status,
                 "error_message": parcel.error_message or "",
                 "has_bulge_approximation": parcel.has_bulge_approximation
@@ -52,14 +59,22 @@ def export_parcels_to_geojson(
     geojson_data = {
         "type": "FeatureCollection",
         "name": out_file.stem,
-        "crs": {
-            "type": "name",
-            "properties": {
-                "name": f"urn:ogc:def:crs:OGC:1.3:CRS84" if crs_name in ("EPSG:4326", "WGS84") else crs_name
-            }
+        "planning_toolbox_metadata": {
+            "coordinate_reference_system": crs_name or "UNKNOWN",
+            "coordinate_units": coordinate_units or "UNKNOWN",
+            "coordinate_transform_applied": False,
         },
         "features": features
     }
+
+    if crs_name:
+        geojson_data["crs"] = {
+            "type": "name",
+            "properties": {
+                "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+                if crs_name in ("EPSG:4326", "WGS84") else crs_name
+            }
+        }
 
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(geojson_data, f, ensure_ascii=False, indent=2)

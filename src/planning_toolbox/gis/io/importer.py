@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import Union, List, Tuple, Dict, Any
 import ezdxf
 import shapely.geometry
+from planning_toolbox.core.units.unit_manager import (
+    UnitError, get_dxf_unit_code_for_name,
+)
 
 logger = logging.getLogger("planning_toolbox")
 
@@ -14,7 +17,8 @@ class GISImportError(Exception):
 def import_geojson_to_dxf(
     geojson_path: Union[Path, str],
     output_dxf_path: Union[Path, str],
-    target_layer: str = "PARCEL_FROM_GIS"
+    target_layer: str = "PARCEL_FROM_GIS",
+    target_unit: str | None = None,
 ) -> Tuple[Path, Dict[str, Any]]:
     """
     Imports vector boundary polygons from a GeoJSON file into a DXF drawing.
@@ -43,10 +47,24 @@ def import_geojson_to_dxf(
     except Exception as e:
         raise GISImportError(f"Failed to parse GeoJSON file {src_file}: {str(e)}")
 
+    declared_crs = _get_declared_crs(data)
+    if _is_geographic_crs(declared_crs):
+        raise GISImportError(
+            f"GeoJSON declares geographic CRS '{declared_crs}'. "
+            "Coordinate transformation is not implemented; import was blocked "
+            "to prevent treating longitude/latitude as CAD meters."
+        )
+
     features = data.get("features", []) if data.get("type") == "FeatureCollection" else [data]
 
     doc = ezdxf.new("R2010")
-    doc.header["$INSUNITS"] = 6  # Meters
+    if target_unit is None:
+        doc.header["$INSUNITS"] = 0
+    else:
+        try:
+            doc.header["$INSUNITS"] = get_dxf_unit_code_for_name(target_unit)
+        except UnitError as exc:
+            raise GISImportError(str(exc)) from exc
     if target_layer not in doc.layers:
         doc.layers.add(name=target_layer, color=3)  # Color 3 = Green
 
@@ -127,3 +145,24 @@ def import_geojson_to_dxf(
 
     doc.saveas(out_file)
     return out_file, import_stats
+
+
+def _get_declared_crs(data: Dict[str, Any]) -> str | None:
+    """Read legacy GeoJSON CRS or Planning Toolbox metadata."""
+    crs = data.get("crs", {})
+    if isinstance(crs, dict):
+        properties = crs.get("properties", {})
+        if isinstance(properties, dict) and properties.get("name"):
+            return str(properties["name"])
+    metadata = data.get("planning_toolbox_metadata", {})
+    if isinstance(metadata, dict) and metadata.get("coordinate_reference_system"):
+        value = str(metadata["coordinate_reference_system"])
+        return None if value.upper() == "UNKNOWN" else value
+    return None
+
+
+def _is_geographic_crs(crs_name: str | None) -> bool:
+    if not crs_name:
+        return False
+    normalized = crs_name.upper().replace(" ", "")
+    return any(token in normalized for token in ("EPSG:4326", "CRS84", "WGS84", "WGS_1984"))

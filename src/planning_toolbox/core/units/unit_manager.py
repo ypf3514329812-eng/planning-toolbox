@@ -15,6 +15,9 @@ INSUNITS_MAP = {
     7: "Kilometers",
 }
 
+# Reverse lookup used when writing a DXF from an external GIS format.
+UNIT_TO_INSUNITS = {name.lower(): code for code, name in INSUNITS_MAP.items() if code != 0}
+
 # Scale factor from linear unit to meters
 LINEAR_TO_METER = {
     "Meters": 1.0,
@@ -79,3 +82,27 @@ def get_area_scale_to_m2(unit_name: str) -> float:
         raise UnitError(f"Unsupported unit: {unit_name}")
     meter_factor = LINEAR_TO_METER[unit_name]
     return meter_factor * meter_factor
+
+def get_linear_scale_to_m(unit_name: str) -> float:
+    """Return the multiplier that converts one source unit into meters."""
+    if unit_name not in LINEAR_TO_METER:
+        raise UnitError(f"Unsupported unit: {unit_name}")
+    return LINEAR_TO_METER[unit_name]
+
+def get_dxf_unit_code_for_name(unit_name: str) -> int:
+    """Convert a supported unit name/alias into an AutoCAD $INSUNITS code."""
+    normalized = str(unit_name).strip().lower()
+    aliases = {
+        "m": "meters", "meter": "meters", "metre": "meters", "metres": "meters",
+        "mm": "millimeters", "millimetre": "millimeters", "millimetres": "millimeters",
+        "cm": "centimeters", "centimetre": "centimeters", "centimetres": "centimeters",
+        "km": "kilometers", "kilometre": "kilometers", "kilometres": "kilometers",
+        "ft": "feet", "foot": "feet",
+        "in": "inches", "inch": "inches",
+        "mi": "miles", "mile": "miles",
+    }
+    normalized = aliases.get(normalized, normalized)
+    code = UNIT_TO_INSUNITS.get(normalized)
+    if code is None:
+        raise UnitError(f"Unsupported DXF unit name: {unit_name}")
+    return code

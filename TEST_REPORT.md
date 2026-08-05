@@ -1,5 +1,7 @@
 # Planning Toolbox Test Report (v0.1.1-RC1 真实性审计版)
 
+> 历史证据文件：对应 RC1，不代表当前 `v0.5.0` 工作树。当前 Codex 接手后的修复与 63 项测试结果见 [CODEX_REMEDIATION_REPORT.md](CODEX_REMEDIATION_REPORT.md)。
+
 ## Overall 状态
 **RC1 / PASS WITH LIMITATIONS**  
 (所有已测 CLI/Python 空间算法、 Fail-Safe 单位校验、SHA-256 零破坏防护及 DXF 生成 100% 真实通过；AutoCAD / ArcGIS Pro 手工 GUI 验证严格标记为 NOT TESTED / PENDING，禁止标记最终 STABLE)

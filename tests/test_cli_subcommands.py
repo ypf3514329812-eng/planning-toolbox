@@ -50,6 +50,57 @@ def test_cli_indicator_manual_command(capsys, monkeypatch):
     assert "建筑密度:             25.00%" in captured.out
     assert "绿地率:               35.00%" in captured.out
 
+def test_cli_validate_blocks_unknown_dxf_units(tmp_path, monkeypatch):
+    """A meter-based setback check must not run on an unspecified-unit DXF."""
+    import ezdxf
+    dxf_file = tmp_path / "unknown_unit.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 0
+    doc.layers.add(name="PARCEL", color=2)
+    p = doc.modelspace().add_lwpolyline(
+        [(0, 0), (100, 0), (100, 100), (0, 100)],
+        dxfattribs={"layer": "PARCEL"},
+    )
+    p.close(True)
+    doc.saveas(dxf_file)
+
+    monkeypatch.setattr(sys, "argv", ["planning-toolbox", "validate", "--dxf", str(dxf_file)])
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 1
+
+
+def test_cli_validate_associates_buildings_with_parcels(tmp_path, capsys, monkeypatch):
+    """Buildings from another parcel must not create false setback violations."""
+    import ezdxf
+    dxf_file = tmp_path / "multi_parcel_val.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=2)
+    doc.layers.add(name="BUILDING", color=4)
+    msp = doc.modelspace()
+
+    for points in (
+        [(0, 0), (100, 0), (100, 100), (0, 100)],
+        [(200, 0), (300, 0), (300, 100), (200, 100)],
+    ):
+        parcel = msp.add_lwpolyline(points, dxfattribs={"layer": "PARCEL"})
+        parcel.close(True)
+    building = msp.add_lwpolyline(
+        [(10, 10), (40, 10), (40, 40), (10, 40)],
+        dxfattribs={"layer": "BUILDING"},
+    )
+    building.close(True)
+    doc.saveas(dxf_file)
+
+    monkeypatch.setattr(sys, "argv", ["planning-toolbox", "validate", "--dxf", str(dxf_file)])
+    main()
+
+    captured = capsys.readouterr()
+    assert captured.out.count("[合规]") == 1
+    assert captured.out.count("[无建筑]") == 1
+
+
 def test_cli_validate_command(tmp_path, capsys, monkeypatch):
     """Test 'planning-toolbox validate' subcommand."""
     import ezdxf

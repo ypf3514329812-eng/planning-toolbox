@@ -29,6 +29,8 @@ def test_geojson_export_valid_parcels(tmp_path):
 
     assert data["type"] == "FeatureCollection"
     assert len(data["features"]) == 1
+    assert "crs" not in data
+    assert data["planning_toolbox_metadata"]["coordinate_reference_system"] == "UNKNOWN"
 
     feat = data["features"][0]
     assert feat["type"] == "Feature"
@@ -89,6 +91,7 @@ def test_geojson_import_to_dxf(tmp_path):
     assert res_dxf.exists()
     assert stats["imported_polygons"] == 1
     doc = ezdxf.readfile(res_dxf)
+    assert doc.header["$INSUNITS"] == 0
     entities = [e for e in doc.modelspace() if e.dxf.layer == "GIS_PARCEL"]
     assert len(entities) == 1
     assert entities[0].dxftype() == "LWPOLYLINE"
@@ -140,3 +143,27 @@ def test_cad_gis_cad_roundtrip(tmp_path):
     max_x = max(p[0] for p in pts)
     assert min_x == 0.0
     assert max_x == 200.0
+
+
+def test_geojson_geographic_crs_is_blocked_without_transform(tmp_path):
+    geojson_path = tmp_path / "wgs84.geojson"
+    geojson_path.write_text(json.dumps({
+        "type": "FeatureCollection",
+        "crs": {"type": "name", "properties": {"name": "EPSG:4326"}},
+        "features": [],
+    }), encoding="utf-8")
+
+    with pytest.raises(GISImportError, match="geographic CRS"):
+        import_geojson_to_dxf(geojson_path, tmp_path / "blocked.dxf")
+
+
+def test_geojson_import_explicit_unit_is_written_to_dxf(tmp_path):
+    geojson_path = tmp_path / "local.geojson"
+    geojson_path.write_text(json.dumps({
+        "type": "FeatureCollection",
+        "features": [],
+    }), encoding="utf-8")
+
+    out_dxf = tmp_path / "meters.dxf"
+    import_geojson_to_dxf(geojson_path, out_dxf, target_unit="m")
+    assert ezdxf.readfile(out_dxf).header["$INSUNITS"] == 6

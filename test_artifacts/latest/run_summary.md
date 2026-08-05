@@ -1,5 +1,7 @@
 # Test Run Summary (真实性审计运行摘要)
 
+> 历史运行摘要：该文件不是当前 v0.5.0 修复后的结果；请以仓库根目录的 [CODEX_REMEDIATION_REPORT.md](../../CODEX_REMEDIATION_REPORT.md) 为准。
+
 - **Date & Time**: 2026-08-04
 - **Environment**: Windows 11 x64, Python 3.13.9, pytest 8.4.2, ezdxf 1.4.4, shapely 2.1.2
 - **Git Branch**: main

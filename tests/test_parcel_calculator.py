@@ -268,7 +268,7 @@ def test_dxf_writer_isolation(tmp_path):
 
 # ===== RING-001 to RING-005: Nested Ring / Hole Detection Tests =====
 
-def test_ring_001_nested_ring_prevents_false_sum(tmp_path):
+def test_ring_001_nested_ring_is_blocked_until_semantics_are_known(tmp_path):
     """RING-001: 100x100 outer ring containing 20x20 inner ring must NOT sum to 10,400 m². Inner ring is flagged."""
     dxf_path = tmp_path / "nested.dxf"
     doc = ezdxf.new("R2010")
@@ -302,17 +302,17 @@ def test_ring_001_nested_ring_prevents_false_sum(tmp_path):
     valid_parcels = [p for p in parcels if p.status == "VALID"]
     nested_parcels = [p for p in parcels if p.status == "NESTED_RING_DETECTED"]
 
-    # Verify only 1 valid parcel (the outer 10,000 m² square)
-    assert len(valid_parcels) == 1
-    assert valid_parcels[0].area_m2 == 10000.0
+    # Neither ring is safe to count without knowing whether the inner ring is
+    # a hole or an independent nested parcel.
+    assert len(valid_parcels) == 0
 
-    # Verify inner parcel is flagged as NESTED_RING_DETECTED
-    assert len(nested_parcels) == 1
-    assert "Nested ring detected" in nested_parcels[0].error_message
+    # Both rings are flagged as NESTED_RING_DETECTED.
+    assert len(nested_parcels) == 2
+    assert all("Nested/ambiguous ring detected" in p.error_message for p in nested_parcels)
 
-    # Total valid sum must be exactly 10,000 m², NOT 10,400 m²
+    # Ambiguous geometry contributes no area until manually resolved.
     total_valid_m2 = sum(p.area_m2 for p in valid_parcels)
-    assert total_valid_m2 == 10000.0
+    assert total_valid_m2 == 0.0
 
 
 def test_ring_002_disjoint_parcels_remain_valid(tmp_path):
@@ -340,7 +340,7 @@ def test_ring_002_disjoint_parcels_remain_valid(tmp_path):
     assert len(valid_parcels) == 2
 
 
-def test_ring_003_polygon_contains_polygon_triggers_nested(tmp_path):
+def test_ring_003_polygon_contains_polygon_blocks_both_rings(tmp_path):
     """RING-003: Polygon A contains Polygon B -> triggers NESTED_RING_DETECTED on B."""
     dxf_path = tmp_path / "contains.dxf"
     doc = ezdxf.new("R2010")
@@ -362,7 +362,7 @@ def test_ring_003_polygon_contains_polygon_triggers_nested(tmp_path):
     parcels, *_ = process_parcels(dxf_path, config, tmp_path / "out")
 
     nested = [p for p in parcels if p.status == "NESTED_RING_DETECTED"]
-    assert len(nested) == 1
+    assert len(nested) == 2
 
 
 def test_ring_004_touching_boundaries_not_hole(tmp_path):

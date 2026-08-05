@@ -69,3 +69,40 @@ def test_indicators_dxf_extraction(tmp_path):
     assert ind.far == 1.0
     assert ind.building_density_pct == 25.0
     assert ind.green_ratio_pct == 9.0
+
+
+def test_indicators_union_overlapping_buildings_and_require_explicit_floors(tmp_path):
+    """Overlapping footprints count once and missing floor input is blocked."""
+    dxf_path = tmp_path / "overlap.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    for layer, color in (("PARCEL", 1), ("BUILDING", 2)):
+        doc.layers.add(name=layer, color=color)
+    msp = doc.modelspace()
+    p = msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], dxfattribs={"layer": "PARCEL"})
+    p.close(True)
+    for points in (
+        [(0, 0), (50, 0), (50, 50), (0, 50)],
+        [(25, 0), (75, 0), (75, 50), (25, 50)],
+    ):
+        b = msp.add_lwpolyline(points, dxfattribs={"layer": "BUILDING"})
+        b.close(True)
+    doc.saveas(dxf_path)
+
+    with pytest.raises(ValueError, match="楼层数"):
+        process_dxf_indicators(dxf_path, output_dir=tmp_path / "blocked")
+
+    results, *_ = process_dxf_indicators(
+        dxf_path,
+        config={"default_floors": 2},
+        output_dir=tmp_path / "out",
+    )
+    assert results[0].building_footprint_m2 == 3750.0
+    assert results[0].total_building_m2 == 7500.0
+
+
+def test_manual_indicators_reject_negative_and_oversized_areas():
+    with pytest.raises(ValueError):
+        calculate_parcel_indicators("P001", 100.0, building_footprint_m2=-1.0)
+    with pytest.raises(ValueError):
+        calculate_parcel_indicators("P001", 100.0, green_area_m2=101.0)
