@@ -1,0 +1,34 @@
+# Planning Toolbox Default Configuration
+
+parcel:
+  # Target DXF layer(s) to scan for parcels.
+  # Only polylines on these layers will be treated as parcel candidates.
+  # WARNING: Do NOT add layer "0" here — it is the DXF default layer and
+  # may contain many non-parcel entities, causing false positives.
+  input_layers:
+    - PARCEL
+    - "地块"
+
+  # Expected unit if DXF header ($INSUNITS) is undefined (0) or missing.
+  # Fail-Safe Policy: Set to null by default. If DXF unit is unknown and no
+  # unit is specified in config, calculation is BLOCKED to prevent false area output.
+  # Valid values when user specifies: m, cm, mm, km, ft, in
+  fallback_unit: null
+
+  # Strict unit enforcement: if true and DXF unit is unknown, stop execution.
+  # Must remain true in production mode for fail-safe operation.
+  strict_unit_check: true
+
+  # Prefix for auto-numbered parcels
+  id_prefix: "P"
+  id_digits: 3
+
+  # DXF Labeling options
+  annotation:
+    layer_name: "PARCEL_LABEL"
+    text_height: 2.5
+    show_ha: true
+    show_m2: false
+
+output:
+  dir: "output"

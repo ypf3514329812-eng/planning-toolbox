@@ -57,11 +57,14 @@ def process_dxf_indicators(
     green_layer = cfg.get("green_layer", "GREEN")
     default_floors = cfg.get("default_floors", 6)  # Default 6 floors if height not specified
 
+    fallback_unit = cfg.get("fallback_unit", None)
+    strict_unit = cfg.get("strict_unit_check", True)
+
     doc, entities_info, unit_name, scale = read_dxf_parcels(
         dxf_path=path,
         target_layers=[parcel_layer, building_layer, green_layer],
-        fallback_unit="m",
-        strict_unit_check=False
+        fallback_unit=fallback_unit,
+        strict_unit_check=strict_unit
     )
 
     parcel_geoms: List[Tuple[str, shapely.geometry.Polygon]] = []
@@ -88,16 +91,24 @@ def process_dxf_indicators(
     for pid, p_poly in parcel_geoms:
         site_area = p_poly.area * scale
 
-        # Calculate building footprint inside this parcel
+        # Calculate building footprint inside this parcel (bbox pre-filter)
+        p_bounds = p_poly.bounds  # (minx, miny, maxx, maxy)
         b_footprint = 0.0
         for b_poly in building_geoms:
+            bb = b_poly.bounds
+            # Skip if bounding boxes don't overlap
+            if bb[2] < p_bounds[0] or bb[0] > p_bounds[2] or bb[3] < p_bounds[1] or bb[1] > p_bounds[3]:
+                continue
             if p_poly.intersects(b_poly):
                 inter = p_poly.intersection(b_poly)
                 b_footprint += inter.area * scale
 
-        # Calculate green area inside this parcel
+        # Calculate green area inside this parcel (bbox pre-filter)
         g_area = 0.0
         for g_poly in green_geoms:
+            gb = g_poly.bounds
+            if gb[2] < p_bounds[0] or gb[0] > p_bounds[2] or gb[3] < p_bounds[1] or gb[1] > p_bounds[3]:
+                continue
             if p_poly.intersects(g_poly):
                 inter = p_poly.intersection(g_poly)
                 g_area += inter.area * scale

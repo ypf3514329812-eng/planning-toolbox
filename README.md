@@ -40,78 +40,78 @@
 
 本工具箱无需修改任何 Python 源代码即可使用！
 
-### 1. 环境准备
+### 1. 环境准备与安装
 
-确保已安装 Python 3.10+。在命令行运行：
+确保已安装 Python 3.10+。在项目根目录下运行：
 
 ```bash
 pip install -e .
 ```
 
-### 2. 地块面积与编号工具 (MVP-1)
+安装完成后，可以在任意终端直接使用 `planning-toolbox` 命令行工具。
 
-将 CAD 图纸（.dxf 格式）放入 `sample_data` 目录或任意路径，运行：
+---
 
+### 2. 统一命令行工具 (`planning-toolbox`)
+
+#### A. 地块面积与编号工具 (Parcel Calculator)
+扫描 DXF 中的地块边界，计算面积、自动编号并标注导出：
 ```bash
-python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf
+planning-toolbox parcel --dxf sample_data/sample_parcels.dxf --output output/
 ```
+*(向后兼容脚本: `python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf`)*
 
-运行后会在 `output/` 目录中自动生成：
-
-1. `<文件名>_labeled.dxf` — 包含地块编号（如 P001）与面积（如 1.24 ha）的标注 DXF 图纸。
-2. `<文件名>.csv` — 地块面积及状态统计表格。
-3. `<文件名>.geojson` — 可在 QGIS / ArcGIS 中直接加载的矢量图层文件。
-4. `<文件名>_report.txt` — 详细处理报告（包含有效地块数、未闭合图形及面积汇总）。
-
-### 3. 图层标准化与空白模板 (MVP-2)
-
+#### B. 图层标准化与空白模板 (Layer Standardization & Template)
 生成城乡规划标准空白 CAD 模板：
-
 ```bash
-python scripts/run_layer_tool.py --create-template output/template.dxf
+planning-toolbox layer template --output output/template.dxf
 ```
-
-标准化旧 CAD 图纸图层：
-
+标准化已有 CAD 图纸图层：
 ```bash
-python scripts/run_layer_tool.py --dxf input.dxf --standardize-layers --output output/
+planning-toolbox layer standardize --dxf input.dxf --output output/
 ```
+*(向后兼容脚本: `python scripts/run_layer_tool.py ...`)*
 
-### 4. GIS ↔ CAD 数据转换工具 (Phase 2)
-
+#### C. GIS ↔ CAD 数据转换 (GIS Data Bridge)
 导出 CAD 图纸至 GeoJSON 矢量文件：
-
 ```bash
-python scripts/run_gis_bridge.py --export-geojson sample_data/sample_parcels.dxf --output output/
+planning-toolbox gis export --dxf sample_data/sample_parcels.dxf --output output/
 ```
-
-将 GeoJSON 矢量文件导入为 CAD 图纸：
-
+将 GeoJSON 矢量文件导入为 CAD DXF 图纸：
 ```bash
-python scripts/run_gis_bridge.py --import-geojson input.geojson --output output/
+planning-toolbox gis import --geojson sample_data/sample_parcels.geojson --output output/
 ```
+*(向后兼容脚本: `python scripts/run_gis_bridge.py ...`)*
 
-### 5. 规划指标自动核算工具 (Phase 3)
-
-分析 CAD DXF 中的 `PARCEL`、`BUILDING`、`GREEN` 图层，核算各地块容积率、建筑密度及绿地率：
-
+#### D. 规划指标自动核算 (Planning Indicators)
+分析 CAD DXF 中的 `PARCEL`、`BUILDING`、`GREEN` 图层，核算容积率 (FAR)、建筑密度与绿地率：
 ```bash
-python scripts/run_indicators_tool.py --dxf input.dxf --output output/
+planning-toolbox indicator --dxf sample_data/sample_parcels.dxf --output output/
 ```
-
-或进行单地块指标快速试算：
-
+单地块指标快速试算：
 ```bash
-python scripts/run_indicators_tool.py --site-area 10000 --building-footprint 2500 --total-building 20000 --green-area 3500
+planning-toolbox indicator --site-area 10000 --building-footprint 2500 --total-building 20000 --green-area 3500
 ```
+*(向后兼容脚本: `python scripts/run_indicators_tool.py ...`)*
 
-### 6. 规则与拓扑检查工具 (Phase 4)
-
-检查 CAD 图纸拓扑错误与建筑退线合规性：
-
+#### E. 规则与拓扑检查 (Rules & Topology Validator)
+自动扫描 CAD 拓扑错误（未闭合、自交）及建筑退线合规性（如退线 5.0m）：
 ```bash
-python scripts/run_validator_tool.py --dxf sample_data/sample_parcels.dxf --setback 5.0
+planning-toolbox validate --dxf sample_data/sample_parcels.dxf --setback 5.0
 ```
+*(向后兼容脚本: `python scripts/run_validator_tool.py --dxf sample_data/sample_parcels.dxf --setback 5.0`)*
+
+---
+
+## Windows 环境常见问题与故障排查
+
+1. **`UNITS` 未设置警告 (`ERR_UNIT_UNKNOWN`)**
+   - 当 CAD 图纸单位未明确设置 ($INSUNITS = 0) 时，工具箱将拦截执行以防误算。
+   - **解决办法**：在 AutoCAD 中打开图纸，输入 `UNITS` 命令将插入缩放单位设为【米】，重新保存 DXF；或在 `config/default.yaml` 中设置 `fallback_unit: 'm'`。
+
+2. **PowerShell 权限问题**
+   - 若在 Windows PowerShell 中出现“禁止运行脚本”提示，请以管理员身份打开 PowerShell 并运行：
+     `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 ---
 
@@ -123,7 +123,7 @@ python scripts/run_validator_tool.py --dxf sample_data/sample_parcels.dxf --setb
 
 ## Automated Test Suite (自动化测试)
 
-运行全部 49 项回归测试：
+运行全部 56 项回归测试：
 
 ```bash
 pytest
@@ -138,3 +138,5 @@ pytest
 - `v0.2.0-gis-bridge`: Phase 2 GIS ↔ CAD 数据桥梁稳定版 (43/43 测试通过)
 - `v0.3.0-indicators`: Phase 3 规划指标自动核算引擎稳定版 (46/46 测试通过)
 - `v0.4.0-validators`: Phase 4 规则与拓扑检查引擎稳定版 (49/49 测试通过)
+- `v0.5.0-polish`: Phase 5 工程完善与 UX 升级版 (56/56 测试通过，修复 3 项 P0 关键 Bug，引入统一 CLI)
+

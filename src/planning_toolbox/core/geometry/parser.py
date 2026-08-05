@@ -1,6 +1,7 @@
 from typing import Tuple, Optional, List
 import math
 import logging
+import ezdxf.path
 from shapely.geometry import Polygon, Point, LineString
 from shapely.validation import explain_validity
 
@@ -18,9 +19,8 @@ def points_from_dxf_polyline(entity) -> Tuple[List[Tuple[float, float]], bool, b
     """
     is_closed = getattr(entity, "is_closed", False)
     
-    # Try using ezdxf path module for arc bulge expansion
+    # Use ezdxf path module for arc bulge expansion
     try:
-        import ezdxf.path
         path = ezdxf.path.make_path(entity)
         # Flatten path to vertices
         vertices = [(p.x, p.y) for p in path.flattening(distance=0.01)]

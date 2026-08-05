@@ -46,12 +46,16 @@ def main():
         geojson_path = Path(args.import_geojson)
         print(f"[GIS Bridge] Importing GeoJSON file: {geojson_path}")
         out_dxf = out_dir / f"{geojson_path.stem}_from_gis.dxf"
-        res_dxf = import_geojson_to_dxf(geojson_path, out_dxf)
+        res_dxf, stats = import_geojson_to_dxf(geojson_path, out_dxf)
         print("\n==========================================")
-        print("   GIS GeoJSON Import to CAD Completed")
+        print("   GIS GeoJSON 导入至 CAD 完成")
         print("==========================================")
-        print(f"Source GeoJSON: {geojson_path}")
-        print(f"Output CAD DXF: {res_dxf}")
+        print(f"源 GeoJSON 文件:     {geojson_path}")
+        print(f"输出 CAD DXF:        {res_dxf}")
+        print(f"导入多边形数:        {stats['imported_polygons']}")
+        if stats['skipped_unsupported'] > 0 or stats['skipped_errors'] > 0:
+            print(f"跳过（不支持类型）:  {stats['skipped_unsupported']}")
+            print(f"跳过（解析错误）:    {stats['skipped_errors']}")
         print("==========================================\n")
 
 if __name__ == "__main__":

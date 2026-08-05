@@ -1,0 +1,72 @@
+"""Tests for the unified planning-toolbox CLI subcommands."""
+import pytest
+from pathlib import Path
+from planning_toolbox.cli import main
+import sys
+
+def test_cli_version_and_help(capsys, monkeypatch):
+    """Test CLI --version and basic help flag."""
+    monkeypatch.setattr(sys, "argv", ["planning-toolbox", "--version"])
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 0
+    captured = capsys.readouterr()
+    assert "Planning Toolbox v" in captured.out or "Planning Toolbox v" in captured.err
+
+def test_cli_parcel_command(tmp_path, capsys, monkeypatch):
+    """Test 'planning-toolbox parcel' subcommand on sample DXF."""
+    import ezdxf
+    dxf_file = tmp_path / "test_parcel.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=2)
+    lw = doc.modelspace().add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], dxfattribs={"layer": "PARCEL"})
+    lw.close(True)
+    doc.saveas(dxf_file)
+
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(sys, "argv", ["planning-toolbox", "parcel", "--dxf", str(dxf_file), "--output", str(out_dir)])
+    main()
+
+    captured = capsys.readouterr()
+    assert "地块面积计算与编号工具" in captured.out
+    assert "有效闭合地块:         1" in captured.out
+    assert (out_dir / "test_parcel_labeled.dxf").exists()
+    assert (out_dir / "test_parcel.csv").exists()
+
+def test_cli_indicator_manual_command(capsys, monkeypatch):
+    """Test 'planning-toolbox indicator' with manual area values."""
+    monkeypatch.setattr(sys, "argv", [
+        "planning-toolbox", "indicator",
+        "--site-area", "10000",
+        "--building-footprint", "2500",
+        "--total-building", "20000",
+        "--green-area", "3500"
+    ])
+    main()
+
+    captured = capsys.readouterr()
+    assert "容积率 (FAR):         2.00" in captured.out
+    assert "建筑密度:             25.00%" in captured.out
+    assert "绿地率:               35.00%" in captured.out
+
+def test_cli_validate_command(tmp_path, capsys, monkeypatch):
+    """Test 'planning-toolbox validate' subcommand."""
+    import ezdxf
+    dxf_file = tmp_path / "test_val.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add(name="PARCEL", color=2)
+    doc.layers.add(name="BUILDING", color=4)
+    p = doc.modelspace().add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], dxfattribs={"layer": "PARCEL"})
+    p.close(True)
+    b = doc.modelspace().add_lwpolyline([(10, 10), (40, 10), (40, 40), (10, 40)], dxfattribs={"layer": "BUILDING"})
+    b.close(True)
+    doc.saveas(dxf_file)
+
+    monkeypatch.setattr(sys, "argv", ["planning-toolbox", "validate", "--dxf", str(dxf_file), "--setback", "5.0"])
+    main()
+
+    captured = capsys.readouterr()
+    assert "拓扑与退线规则检查" in captured.out
+    assert "合规" in captured.out

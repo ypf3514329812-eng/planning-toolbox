@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
 
 @dataclass
 class SetbackCheckResult:
@@ -26,6 +26,7 @@ def check_building_setback(
       setback_polygon = parcel_polygon.buffer(-required_setback_m)
       
     If any building footprint extends outside the setback polygon, it is flagged as a VIOLATION.
+    Handles MultiPolygon results from irregular parcel shapes.
     """
     if not building_polygons:
         return SetbackCheckResult(

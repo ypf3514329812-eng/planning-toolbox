@@ -4,23 +4,35 @@ import yaml
 import ezdxf
 from planning_toolbox.cad.layers.template import ensure_linetype
 
-DEFAULT_LAYERS_CONFIG_PATH = Path(__file__).parent.parent.parent.parent.parent / "config" / "layers.yaml"
+PACKAGE_LAYERS_CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "layers.yaml"
 
 def _find_layers_config_path() -> Path:
-    """Find config/layers.yaml relative to package or current directory."""
+    """Find config/layers.yaml relative to package, project root, or package internal config."""
     current = Path(__file__).resolve().parent
     for _ in range(5):
         candidate = current / "config" / "layers.yaml"
         if candidate.exists():
             return candidate
         current = current.parent
-    return DEFAULT_LAYERS_CONFIG_PATH
+
+    if PACKAGE_LAYERS_CONFIG_PATH.exists():
+        return PACKAGE_LAYERS_CONFIG_PATH
+
+    return Path("config/layers.yaml")
 
 def load_layer_config(config_path: Path | str | None = None) -> Dict[str, Any]:
     """Load layer specification from YAML file."""
-    path = Path(config_path) if config_path else _find_layers_config_path()
-    if not path.exists():
-        raise FileNotFoundError(f"Layer configuration file not found: {path}")
+    if config_path:
+        path = Path(config_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Layer configuration file not found: {path}")
+    else:
+        path = _find_layers_config_path()
+        if not path.exists():
+            if PACKAGE_LAYERS_CONFIG_PATH.exists():
+                path = PACKAGE_LAYERS_CONFIG_PATH
+            else:
+                raise FileNotFoundError(f"Layer configuration file not found: {path}")
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 

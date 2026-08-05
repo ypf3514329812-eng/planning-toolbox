@@ -84,9 +84,10 @@ def test_geojson_import_to_dxf(tmp_path):
         json.dump(geojson_data, f)
 
     out_dxf = tmp_path / "imported.dxf"
-    res_dxf = import_geojson_to_dxf(geojson_path, out_dxf, target_layer="GIS_PARCEL")
+    res_dxf, stats = import_geojson_to_dxf(geojson_path, out_dxf, target_layer="GIS_PARCEL")
 
     assert res_dxf.exists()
+    assert stats["imported_polygons"] == 1
     doc = ezdxf.readfile(res_dxf)
     entities = [e for e in doc.modelspace() if e.dxf.layer == "GIS_PARCEL"]
     assert len(entities) == 1
@@ -125,9 +126,10 @@ def test_cad_gis_cad_roundtrip(tmp_path):
 
     # 2. GeoJSON -> Import CAD DXF
     reimported_dxf = tmp_path / "out" / "square_reimported.dxf"
-    res_dxf = import_geojson_to_dxf(geojson_file, reimported_dxf, target_layer="GIS_PARCEL")
+    res_dxf, stats = import_geojson_to_dxf(geojson_file, reimported_dxf, target_layer="GIS_PARCEL")
 
     assert res_dxf.exists()
+    assert stats["imported_polygons"] >= 1
     re_doc = ezdxf.readfile(res_dxf)
     ents = [e for e in re_doc.modelspace() if e.dxf.layer == "GIS_PARCEL"]
     assert len(ents) == 1

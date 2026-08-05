@@ -11,22 +11,29 @@ def detect_nested_rings(candidate_valid_parcels: List[Parcel]) -> None:
     Detects if any closed parcel ring is completely contained inside another parcel ring.
     Marks contained inner rings with status 'NESTED_RING_DETECTED' and sets error message
     to prevent false area summation.
+    Uses bounding box pre-filtering to avoid O(N²) expensive geometry checks.
     """
     for outer in candidate_valid_parcels:
+        if outer.status != "VALID" or not outer.geometry:
+            continue
+        o_bounds = outer.geometry.bounds  # (minx, miny, maxx, maxy)
         for inner in candidate_valid_parcels:
-            if outer is not inner and outer.status == "VALID" and inner.status == "VALID":
-                if outer.geometry and inner.geometry:
-                    # True containment: outer contains inner, they don't merely touch boundaries, and outer area > inner area
-                    if (
-                        outer.geometry.contains(inner.geometry) and
-                        not outer.geometry.touches(inner.geometry) and
-                        outer.geometry.area > inner.geometry.area
-                    ):
-                        inner.status = "NESTED_RING_DETECTED"
-                        inner.error_message = (
-                            f"Nested ring detected inside parcel {outer.parcel_id}. "
-                            f"Requires manual inspection or multi-ring hole semantics."
-                        )
+            if outer is inner or inner.status != "VALID" or not inner.geometry:
+                continue
+            # Bounding box pre-filter: skip if inner bbox is not within outer bbox
+            i_bounds = inner.geometry.bounds
+            if (i_bounds[0] < o_bounds[0] or i_bounds[1] < o_bounds[1] or
+                    i_bounds[2] > o_bounds[2] or i_bounds[3] > o_bounds[3]):
+                continue
+            # True containment check (expensive)
+            if (outer.geometry.contains(inner.geometry) and
+                    not outer.geometry.touches(inner.geometry) and
+                    outer.geometry.area > inner.geometry.area):
+                inner.status = "NESTED_RING_DETECTED"
+                inner.error_message = (
+                    f"Nested ring detected inside parcel {outer.parcel_id}. "
+                    f"Requires manual inspection or multi-ring hole semantics."
+                )
 
 def process_parcels(
     dxf_path: Path | str,
