@@ -125,3 +125,12 @@ def test_file_zone_load_sample(qapp):
     dxf_path = window.file_zone.get_dxf_path()
     assert "sample_parcels.dxf" in dxf_path
     assert window.file_zone.lbl_status.text() == "✓ 文件存在"
+
+def test_cad_canvas_preview_rendering(qapp):
+    """测试 CADPreviewCanvas 2D 画布渲染。"""
+    from planning_toolbox.gui.widgets.canvas_widget import CADPreviewCanvas
+    canvas = CADPreviewCanvas()
+    sample_dxf = Path("sample_data/sample_parcels.dxf")
+    canvas.load_dxf_preview(sample_dxf)
+    assert canvas.ax is not None
+    assert len(canvas.ax.patches) == 10  # 3 parcels + 4 buildings + 3 greens = 10 patches

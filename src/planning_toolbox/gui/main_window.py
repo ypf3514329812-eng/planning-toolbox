@@ -66,14 +66,16 @@ class PlanningToolboxMainWindow(QMainWindow):
         main_layout.addWidget(self.result_zone, stretch=6)
 
     def _on_dxf_file_changed(self, file_path: str):
-        """当 DXF 文件切换时，执行无损前置扫描并更新数据检查区。"""
+        """当 DXF 文件切换时，执行无损前置扫描并更新数据检查区与 2D 画布。"""
         if not file_path or not Path(file_path).exists():
             self.inspection_zone.clear_inspection()
+            self.result_zone.canvas.clear_canvas("等待选择 DXF 文件...")
             return
 
         # 快速扫描
         info = inspect_dxf_file(file_path)
         self.inspection_zone.update_inspection(info)
+        self.result_zone.canvas.load_dxf_preview(file_path)
 
     def _start_analysis_task(self, task_type: str, params: Dict[str, Any]):
         """启动后台计算任务。"""
@@ -109,7 +111,7 @@ class PlanningToolboxMainWindow(QMainWindow):
             "gis_export": "CAD 导出至 GeoJSON",
             "gis_import": "GeoJSON 导入至 CAD DXF"
         }
-        self.result_zone.start_task(task_names.get(task_type, task_type))
+        self.result_zone.start_task(task_names.get(task_type, task_type), dxf_path=dxf_path)
 
         # 启动 QThread Worker
         self.current_worker = TaskWorker(task_type, params, self)

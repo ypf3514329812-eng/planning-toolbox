@@ -1,4 +1,4 @@
-"""数据检查区 (Data Inspection Zone Widget)."""
+"""数据检查区 (Data Inspection Zone Widget with Hero Stat Cards)."""
 from typing import Dict, Any
 from PySide6.QtWidgets import (
     QFrame, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
@@ -7,8 +7,8 @@ from PySide6.QtCore import Qt
 
 class InspectionZoneWidget(QFrame):
     """
-    数据检查区：展示 DXF 单位、图层匹配、多段线数量、未闭合线数及嵌套环前置检测。
-    包含未知单位时的红框警告提醒。
+    数据检查区：使用英雄数值卡片 (Hero Stat Cards) 展示 DXF 单位、图层匹配及拓扑实体明细。
+    已知单位显示绿色绿带，未知单位激活高亮红色阻断告警。
     """
 
     def __init__(self, parent=None):
@@ -21,63 +21,81 @@ class InspectionZoneWidget(QFrame):
         layout.setContentsMargins(12, 10, 12, 10)
 
         # 标题
-        title = QLabel("图纸数据检查 (DXF Data Inspection)")
+        title = QLabel("图纸预检与拓扑状态 (DXF Inspection)")
         title.setObjectName("ZoneTitle")
         layout.addWidget(title)
 
-        # 卡片网格
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(16)
-        grid.setVerticalSpacing(8)
-
-        # 1. DXF 单位
-        grid.addWidget(QLabel("DXF 单位 ($INSUNITS):"), 0, 0)
+        # 1. 顶部单位与图层总结行
+        header_box = QHBoxLayout()
+        header_box.addWidget(QLabel("DXF 插入缩放单位:"))
         self.lbl_unit = QLabel("等待选择图纸...")
         self.lbl_unit.setObjectName("BadgeWarning")
-        grid.addWidget(self.lbl_unit, 0, 1)
+        header_box.addWidget(self.lbl_unit)
 
-        # 2. 图层检测
-        grid.addWidget(QLabel("已匹配标准图层:"), 0, 2)
-        self.lbl_layers = QLabel("PARCEL [-]  BUILDING [-]  GREEN [-]")
-        grid.addWidget(self.lbl_layers, 0, 3)
+        header_box.addStretch()
+        header_box.addWidget(QLabel("标准图层:"))
+        self.lbl_layers = QLabel("PARCEL [0]   BUILDING [0]   GREEN [0]")
+        self.lbl_layers.setStyleSheet("font-weight: 700; color: #38bdf8;")
+        header_box.addWidget(self.lbl_layers)
 
-        # 3. 多段线实体数
-        grid.addWidget(QLabel("多段线总数:"), 1, 0)
-        self.lbl_polylines = QLabel("-")
-        grid.addWidget(self.lbl_polylines, 1, 1)
+        layout.addLayout(header_box)
 
-        # 4. 有效闭合数
-        grid.addWidget(QLabel("有效闭合多边形:"), 1, 2)
-        self.lbl_closed = QLabel("-")
-        grid.addWidget(self.lbl_closed, 1, 3)
+        # 2. 4 个 Hero 数值卡片 (QFrame#KpiCard)
+        cards_layout = QHBoxLayout()
+        cards_layout.setSpacing(10)
 
-        # 5. 未闭合数
-        grid.addWidget(QLabel("未闭合多段线:"), 2, 0)
-        self.lbl_open = QLabel("-")
-        grid.addWidget(self.lbl_open, 2, 1)
+        # 卡片 1: 多段线总数
+        self.card_total = self._create_kpi_card("多段线总数", "-", "📏")
+        cards_layout.addWidget(self.card_total)
 
-        # 6. 嵌套环/孔洞数
-        grid.addWidget(QLabel("嵌套环/孔洞歧义:"), 2, 2)
-        self.lbl_nested = QLabel("-")
-        grid.addWidget(self.lbl_nested, 2, 3)
+        # 卡片 2: 有效闭合数
+        self.card_closed = self._create_kpi_card("有效闭合多边形", "-", "🟢")
+        cards_layout.addWidget(self.card_closed)
 
-        layout.addLayout(grid)
+        # 卡片 3: 未闭合线数
+        self.card_open = self._create_kpi_card("未闭合多段线", "-", "🔴")
+        cards_layout.addWidget(self.card_open)
 
-        # 未知单位红色警告框
+        # 卡片 4: 嵌套环/孔洞歧义
+        self.card_nested = self._create_kpi_card("嵌套环/孔洞歧义", "-", "⚠️")
+        cards_layout.addWidget(self.card_nested)
+
+        layout.addLayout(cards_layout)
+
+        # 3. 未知单位红色警告框
         self.warning_box = QLabel(
-            "⚠️ 无法确认 DXF 单位，系统将阻止面积和距离计算。\n"
-            "请先在 AutoCAD 中使用 UNITS 命令将图纸单位设为【米】，或在任务选项中指定回退单位。"
+            "🛑 单位安全阻断警告: 无法确认 DXF 单位 ($INSUNITS=0)。\n"
+            "系统已自动阻止面积和距离计算。请先在 AutoCAD 中使用 UNITS 命令将图纸单位设为【米】，或在任务配置中选择单位回退值。"
         )
         self.warning_box.setStyleSheet(
-            "background-color: #4a1515; color: #ff9999; border: 1px solid #993333; "
-            "border-radius: 6px; padding: 8px; font-weight: bold; margin-top: 6px;"
+            "background-color: #450a0a; color: #f87171; border: 1px solid #dc2626; "
+            "border-radius: 6px; padding: 8px; font-weight: 700; font-size: 12px; margin-top: 4px;"
         )
         self.warning_box.setWordWrap(True)
         self.warning_box.hide()  # 默认隐藏
         layout.addWidget(self.warning_box)
 
+    def _create_kpi_card(self, label_text: str, default_val: str, icon_str: str) -> QFrame:
+        card = QFrame()
+        card.setObjectName("KpiCard")
+        c_layout = QVBoxLayout(card)
+        c_layout.setContentsMargins(8, 6, 8, 6)
+        c_layout.setSpacing(2)
+
+        lbl_title = QLabel(f"{icon_str} {label_text}")
+        lbl_title.setObjectName("KpiLabel")
+
+        lbl_val = QLabel(default_val)
+        lbl_val.setObjectName("KpiValue")
+        lbl_val.setAlignment(Qt.AlignLeft)
+
+        c_layout.addWidget(lbl_title)
+        c_layout.addWidget(lbl_val)
+        card.value_label = lbl_val  # 快捷引用
+        return card
+
     def update_inspection(self, info: Dict[str, Any]):
-        """根据 dxf_inspector 的扫描字典更新数据检查区 UI。"""
+        """根据 dxf_inspector 的扫描字典更新卡片数值与单位指示。"""
         if not info.get("exists") or not info.get("valid_dxf"):
             self.clear_inspection()
             if info.get("exists") and not info.get("valid_dxf"):
@@ -93,13 +111,13 @@ class InspectionZoneWidget(QFrame):
         self.lbl_unit.setObjectName("BadgeSuccess" if unit_known else "BadgeError")
         self.lbl_unit.setStyle(self.lbl_unit.style())
 
-        # 隐/显未知单位警告框
+        # 显/隐单位警告框
         if not unit_known:
             self.warning_box.show()
         else:
             self.warning_box.hide()
 
-        # 图层标记
+        # 图层明细
         counts = info.get("layer_counts", {})
         p_count = counts.get("PARCEL", 0)
         b_count = counts.get("BUILDING", 0)
@@ -110,25 +128,27 @@ class InspectionZoneWidget(QFrame):
         g_tag = f"GREEN [{g_count}]" if info.get("has_green_layer") else "GREEN [0]"
         self.lbl_layers.setText(f"{p_tag}   {b_tag}   {g_tag}")
 
-        # 数值
-        self.lbl_polylines.setText(str(info.get("total_polylines", 0)))
-        self.lbl_closed.setText(str(info.get("valid_closed", 0)))
+        # KPI 卡片更新
+        self.card_total.value_label.setText(str(info.get("total_polylines", 0)))
+        self.card_closed.value_label.setText(str(info.get("valid_closed", 0)))
         
         open_n = info.get("open_polylines", 0)
-        self.lbl_open.setText(f"{open_n} 个" if open_n > 0 else "0 个")
-        self.lbl_open.setStyleSheet("color: #ff9999;" if open_n > 0 else "color: #e0e0e6;")
+        self.card_open.value_label.setText(str(open_n))
+        self.card_open.value_label.setStyleSheet("color: #f87171;" if open_n > 0 else "color: #38bdf8;")
 
         nested_n = info.get("nested_ring_count", 0)
-        self.lbl_nested.setText(f"{nested_n} 组" if nested_n > 0 else "0 组")
-        self.lbl_nested.setStyleSheet("color: #ffcc66;" if nested_n > 0 else "color: #e0e0e6;")
+        self.card_nested.value_label.setText(str(nested_n))
+        self.card_nested.value_label.setStyleSheet("color: #fbbf24;" if nested_n > 0 else "color: #38bdf8;")
 
     def clear_inspection(self):
         self.lbl_unit.setText("等待选择图纸...")
         self.lbl_unit.setObjectName("BadgeWarning")
         self.lbl_unit.setStyle(self.lbl_unit.style())
-        self.lbl_layers.setText("PARCEL [-]  BUILDING [-]  GREEN [-]")
-        self.lbl_polylines.setText("-")
-        self.lbl_closed.setText("-")
-        self.lbl_open.setText("-")
-        self.lbl_nested.setText("-")
+        self.lbl_layers.setText("PARCEL [0]   BUILDING [0]   GREEN [0]")
+        self.card_total.value_label.setText("-")
+        self.card_closed.value_label.setText("-")
+        self.card_open.value_label.setText("-")
+        self.card_open.value_label.setStyleSheet("color: #38bdf8;")
+        self.card_nested.value_label.setText("-")
+        self.card_nested.value_label.setStyleSheet("color: #38bdf8;")
         self.warning_box.hide()

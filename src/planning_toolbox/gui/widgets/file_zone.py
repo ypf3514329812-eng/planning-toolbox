@@ -1,13 +1,14 @@
-"""文件与输出目录选择区 (File Zone Widget)."""
+"""文件与输出目录选择区 (File Zone Widget with Drag-and-Drop & Presets)."""
 from pathlib import Path
 from PySide6.QtWidgets import (
     QFrame, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog
 )
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
 class FileZoneWidget(QFrame):
     """
-    文件区：显示输入 DXF、输出目录、只读安全说明，提供文件与目录拾取按钮。
+    文件区：显示输入 DXF、输出目录、只读安全说明，支持文件拖拽 (Drag & Drop) 进窗口。
     """
     file_changed = Signal(str)          # DXF 文件切换信号
     output_dir_changed = Signal(str)    # 输出目录切换信号
@@ -15,6 +16,7 @@ class FileZoneWidget(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("ZoneFrame")
+        self.setAcceptDrops(True)  # 启用原生文件拖拽支持
         self._init_ui()
 
     def _init_ui(self):
@@ -23,13 +25,13 @@ class FileZoneWidget(QFrame):
 
         # 标题与安全声明
         top_bar = QHBoxLayout()
-        title = QLabel("文件与输出位置 (Files & Workspace)")
+        title = QLabel("文件与工作区 (Workspace & Inputs)")
         title.setObjectName("ZoneTitle")
         top_bar.addWidget(title)
         
         top_bar.addStretch()
-        safety_notice = QLabel("🔒 原始 DXF 文件只读保护模式 (Zero-Mutation)")
-        safety_notice.setStyleSheet("color: #70a0d0; font-size: 11px;")
+        safety_notice = QLabel("🔒 原始 DXF 只读无损保护 (Zero-Mutation)")
+        safety_notice.setStyleSheet("color: #38bdf8; font-size: 11px; font-weight: 600;")
         top_bar.addWidget(safety_notice)
         layout.addLayout(top_bar)
 
@@ -37,15 +39,18 @@ class FileZoneWidget(QFrame):
         dxf_layout = QHBoxLayout()
         dxf_label = QLabel("输入 DXF 文件:")
         dxf_label.setFixedWidth(90)
+        
         self.dxf_input = QLineEdit()
-        self.dxf_input.setPlaceholderText("请选择或拖入 CAD DXF 文件 (*.dxf)...")
+        self.dxf_input.setPlaceholderText("可点击浏览、选择示例图纸或直接拖拽 *.dxf 文件至此窗口...")
+        self.dxf_input.setToolTip("选择或拖拽 AutoCAD DXF 矢量图纸文件进行分析")
         self.dxf_input.textChanged.connect(self._on_dxf_text_changed)
 
-        btn_browse_dxf = QPushButton("浏览 DXF...")
+        btn_browse_dxf = QPushButton("📁 浏览 DXF...")
         btn_browse_dxf.clicked.connect(self._browse_dxf)
 
-        btn_sample = QPushButton("⭐ 加载示例图纸")
-        btn_sample.setToolTip("加载内置规划示例图纸 sample_data/sample_parcels.dxf 进行一键分析测试")
+        btn_sample = QPushButton("⭐ 一键示例图纸")
+        btn_sample.setObjectName("SampleButton")
+        btn_sample.setToolTip("一键加载内置规划示例图纸 sample_data/sample_parcels.dxf 进行全套功能体验")
         btn_sample.clicked.connect(self._load_sample)
 
         self.lbl_status = QLabel("[未选择文件]")
@@ -60,19 +65,36 @@ class FileZoneWidget(QFrame):
 
         # 2. 输出目录行
         out_layout = QHBoxLayout()
-        out_label = QLabel("输出结果目录:")
+        out_label = QLabel("结果输出目录:")
         out_label.setFixedWidth(90)
+        
         self.out_input = QLineEdit()
         self.out_input.setText(str(Path("output").resolve()))
+        self.out_input.setToolTip("所有生成的新 DXF、CSV、GeoJSON 及文本报告将自动存放于该目录下")
         self.out_input.textChanged.connect(lambda t: self.output_dir_changed.emit(t))
 
-        btn_browse_out = QPushButton("选择目录...")
+        btn_browse_out = QPushButton("📂 选择目录...")
         btn_browse_out.clicked.connect(self._browse_output_dir)
 
         out_layout.addWidget(out_label)
         out_layout.addWidget(self.out_input)
         out_layout.addWidget(btn_browse_out)
         layout.addLayout(out_layout)
+
+    # ─── Drag & Drop 原生拖拽支持 ───
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if any(url.toLocalFile().lower().endswith(".dxf") for url in urls):
+                event.acceptProposedAction()
+
+    def dropEvent(self, event: QDropEvent):
+        for url in event.mimeData().urls():
+            fpath = url.toLocalFile()
+            if fpath.lower().endswith(".dxf"):
+                self.dxf_input.setText(fpath)
+                event.acceptProposedAction()
+                break
 
     def _browse_dxf(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -102,7 +124,7 @@ class FileZoneWidget(QFrame):
             self.lbl_status.setText("⚠ 非 DXF 文件")
             self.lbl_status.setObjectName("BadgeWarning")
         else:
-            self.lbl_status.setText("✗ 文件不存在")
+            self.lbl_status.setText("✗ 文件未找到")
             self.lbl_status.setObjectName("BadgeError")
         
         self.lbl_status.setStyle(self.lbl_status.style())  # 刷新样式
