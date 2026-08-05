@@ -101,9 +101,9 @@ def main():
             parcel_id=pid
         )
         status_cn = {
-            "COMPLIANT": "✓ 合规",
-            "VIOLATION": "✗ 违规",
-            "NO_BUILDING": "— 无建筑"
+            "COMPLIANT": "[合规]",
+            "VIOLATION": "[违规]",
+            "NO_BUILDING": "[无建筑]"
         }.get(result.status, result.status)
 
         print(f"  [{pid}] {status_cn}")

@@ -230,7 +230,7 @@ def cmd_validate(args):
             pid = f"P{idx:03d}"
             result = check_building_setback(p_poly, building_polys, setback_m, pid)
             status_cn = {
-                "COMPLIANT": "✓ 合规", "VIOLATION": "✗ 违规", "NO_BUILDING": "— 无建筑"
+                "COMPLIANT": "[合规]", "VIOLATION": "[违规]", "NO_BUILDING": "[无建筑]"
             }.get(result.status, result.status)
             print(f"  [{pid}] {status_cn}", end="")
             if result.status == "VIOLATION":
