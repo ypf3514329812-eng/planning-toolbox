@@ -19,7 +19,11 @@
 ### 3. 嵌套环/孔洞处理 (Nested Rings & Holes)
 - 当某一图层内存在“大多边形完全包含小多边形”的嵌套结构时，内环将自动标记为 `NESTED_RING_DETECTED`，并从 `VALID` 面积汇总中扣除，防止重复累加。
 
-### 4. 原始文件“零破坏”保证 (Zero-Mutation Guarantee)
+### 4. GIS 数据桥梁 (CAD ↔ GIS Bidirectional Bridge)
+- **GeoJSON 导出**：自动将地块几何与全套属性（`parcel_id`, `area_m2`, `area_ha`, `geometry_status`, `source_layer`）导出为 RFC 7946 GeoJSON FeatureCollection，可直接拖入 QGIS / ArcGIS Pro。
+- **GeoJSON 导入**：支持将 GIS 矢量边界导入生成 CAD DXF `LWPOLYLINE` 图层。
+
+### 5. 原始文件“零破坏”保证 (Zero-Mutation Guarantee)
 - 读取 DXF 时只进行内存解析，标注文件写出至独立的 `*_labeled.dxf`，原始 DXF 文件通过 SHA-256 校验对比保证 100% 字节级无修改。
 
 ---
@@ -54,7 +58,8 @@ python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf
 
 1. `<文件名>_labeled.dxf` — 包含地块编号（如 P001）与面积（如 1.24 ha）的标注 DXF 图纸。
 2. `<文件名>.csv` — 地块面积及状态统计表格。
-3. `<文件名>_report.txt` — 详细处理报告（包含有效地块数、未闭合图形及面积汇总）。
+3. `<文件名>.geojson` — 可在 QGIS / ArcGIS 中直接加载的矢量图层文件。
+4. `<文件名>_report.txt` — 详细处理报告（包含有效地块数、未闭合图形及面积汇总）。
 
 ### 3. 图层标准化与空白模板 (MVP-2)
 
@@ -70,6 +75,20 @@ python scripts/run_layer_tool.py --create-template output/template.dxf
 python scripts/run_layer_tool.py --dxf input.dxf --standardize-layers --output output/
 ```
 
+### 4. GIS ↔ CAD 数据转换工具 (Phase 2)
+
+导出 CAD 图纸至 GeoJSON 矢量文件：
+
+```bash
+python scripts/run_gis_bridge.py --export-geojson sample_data/sample_parcels.dxf --output output/
+```
+
+将 GeoJSON 矢量文件导入为 CAD 图纸：
+
+```bash
+python scripts/run_gis_bridge.py --import-geojson input.geojson --output output/
+```
+
 ---
 
 ## Manual CAD & GIS Validation Guide (AutoCAD / ArcGIS 人工核验指南)
@@ -80,7 +99,7 @@ python scripts/run_layer_tool.py --dxf input.dxf --standardize-layers --output o
 
 ## Automated Test Suite (自动化测试)
 
-运行全部 39 项回归测试：
+运行全部 43 项回归测试：
 
 ```bash
 pytest
@@ -91,5 +110,5 @@ pytest
 ## Git Release & Stabilization
 
 - `v0.1.0-mvp1`: MVP-1 初始版本
-- `v0.1.1-rc1`: RC1 稳定化候选版本
-- `fix/rc1-stable-gate`: RC1 稳定化整改分支（等待 Codex 独立二审）
+- `v0.1.1-stable`: RC1 稳定化稳定版 (39/39 测试通过, 零破坏验证)
+- `v0.2.0-gis-bridge`: Phase 2 GIS ↔ CAD 数据桥梁稳定版 (43/43 测试通过)

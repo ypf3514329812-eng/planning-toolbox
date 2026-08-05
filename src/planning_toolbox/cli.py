@@ -81,6 +81,7 @@ def main():
             total_ha = sum(p.area_ha for p in parcels if p.status == "VALID")
             error_count = sum(1 for p in parcels if p.status != "VALID")
 
+            geojson_file = (Path(args.output) if args.output else Path("output")) / f"{dxf_path.stem}.geojson"
             logger.info(f"Successfully processed parcels.")
             print("\n==========================================")
             print("    Planning Toolbox Task Completed")
@@ -93,6 +94,7 @@ def main():
             print("------------------------------------------")
             print(f"Labeled DXF Output:       {labeled_dxf}")
             print(f"CSV Summary Output:       {csv_file}")
+            print(f"GeoJSON GIS Output:       {geojson_file}")
             print(f"Detailed Report Output:   {report_file}")
             print("==========================================\n")
             return

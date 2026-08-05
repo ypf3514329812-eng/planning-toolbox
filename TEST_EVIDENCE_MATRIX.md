@@ -1,4 +1,4 @@
-# Planning Toolbox — Test Evidence Matrix (RC1 Stable Gate)
+# Planning Toolbox — Test Evidence Matrix
 
 This matrix maps every single requirement and test case to its execution status, evidence artifact, and verified result.
 
@@ -10,7 +10,7 @@ This matrix maps every single requirement and test case to its execution status,
 
 ---
 
-## 1. Automated Unit & Geometry Tests (Pytest 39/39 PASS)
+## 1. Automated Unit & Geometry Tests (Pytest 43/43 PASS)
 
 | Test ID | Test Category | Description / Verification Target | Status | Evidence Log |
 | :--- | :--- | :--- | :---: | :--- |
@@ -21,6 +21,11 @@ This matrix maps every single requirement and test case to its execution status,
 | **BULGE-005** | Bulge Geometry | Mixed straight line and arc curved boundaries | **PASS** | `pytest_output.txt` |
 | **BULGE-006** | Bulge Geometry | CW vs CCW vertex order area equivalence | **PASS** | `pytest_output.txt` |
 | **BULGE-007** | Bulge Geometry | Closed capsule polyline (17,853.98 m²) | **PASS** | `pytest_output.txt` |
+| **GIS-001**   | GIS Data Bridge| GeoJSON export of valid parcel objects | **PASS** | `pytest_output.txt` |
+| **GIS-002**   | GIS Data Bridge| GeoJSON export of empty/invalid parcel objects | **PASS** | `pytest_output.txt` |
+| **GIS-003**   | GIS Data Bridge| GeoJSON to CAD DXF polyline boundary import | **PASS** | `pytest_output.txt` |
+| **GIS-004**   | GIS Data Bridge| GeoJSON import output path collision protection | **PASS** | `pytest_output.txt` |
+| **GIS-005**   | GIS Data Bridge| CAD -> GeoJSON -> CAD DXF roundtrip fidelity | **PASS** | `pytest_output.txt` |
 | **LAYER-001** | Layer Manager | Blank planning DXF template generation | **PASS** | `pytest_output.txt` |
 | **LAYER-002** | Layer Manager | Layer standardization and remapping | **PASS** | `pytest_output.txt` |
 | **LAYER-003** | Layer Manager | Unknown layer remapping report generation | **PASS** | `pytest_output.txt` |
@@ -61,4 +66,4 @@ This matrix maps every single requirement and test case to its execution status,
 | Validation Item | Required Environment | Description | Status | Rationale |
 | :--- | :--- | :--- | :---: | :--- |
 | **AutoCAD GUI Verification** | AutoCAD 2020+ GUI | Open `*_labeled.dxf`, run `AREA` and `LIST` commands, compare text labels with CAD properties. | **PENDING USER VALIDATION** | CLI environment lacks AutoCAD GUI driver. Requires manual check by student. |
-| **ArcGIS Pro GIS Import** | ArcGIS Pro 3.x | Import `*.csv` coordinates / shapefile into GIS, verify spatial alignment and area field match. | **PENDING USER VALIDATION** | CLI environment lacks ArcGIS desktop application. Requires manual check by student. |
+| **ArcGIS Pro GIS Import** | ArcGIS Pro 3.x / QGIS | Import `*.geojson` vector layer into QGIS/ArcGIS Pro, verify spatial alignment and attribute table match. | **PENDING USER VALIDATION** | CLI environment lacks desktop GIS application. Requires manual check by student. |

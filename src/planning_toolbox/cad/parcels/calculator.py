@@ -137,6 +137,11 @@ def process_parcels(
         annotation_config=parcel_cfg.get("annotation", {})
     )
 
+    # 5.5. Generate GeoJSON Export
+    from planning_toolbox.gis.io.exporter import export_parcels_to_geojson
+    geojson_path = output_dir_path / f"{stem}.geojson"
+    export_parcels_to_geojson(all_parcels, geojson_path)
+
     # 6. Generate Summary Text Report
     open_count = sum(1 for p in raw_parcels if p.status == "OPEN")
     invalid_geom_count = sum(1 for p in raw_parcels if p.status in ("INVALID_GEOMETRY", "ZERO_AREA"))
