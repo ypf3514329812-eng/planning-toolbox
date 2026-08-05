@@ -107,3 +107,21 @@ def test_task_worker_validate_execution(qapp):
     assert finished_data.get("task_type") == "validate"
     assert finished_data.get("valid_count") == 10
     assert len(finished_data.get("setback_results", [])) == 3
+
+def test_dxf_inspector_layer_counts():
+    """测试 DXF 预检扫描工具返回图层实体明细数量。"""
+    sample_dxf = Path("sample_data/sample_parcels.dxf")
+    info = inspect_dxf_file(sample_dxf)
+
+    counts = info.get("layer_counts", {})
+    assert counts.get("PARCEL") == 4
+    assert counts.get("BUILDING") == 4
+    assert counts.get("GREEN") == 3
+
+def test_file_zone_load_sample(qapp):
+    """测试 FileZoneWidget 一键加载示例图纸按钮。"""
+    window = PlanningToolboxMainWindow()
+    window.file_zone._load_sample()
+    dxf_path = window.file_zone.get_dxf_path()
+    assert "sample_parcels.dxf" in dxf_path
+    assert window.file_zone.lbl_status.text() == "✓ 文件存在"

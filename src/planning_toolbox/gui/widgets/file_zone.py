@@ -44,12 +44,17 @@ class FileZoneWidget(QFrame):
         btn_browse_dxf = QPushButton("浏览 DXF...")
         btn_browse_dxf.clicked.connect(self._browse_dxf)
 
+        btn_sample = QPushButton("⭐ 加载示例图纸")
+        btn_sample.setToolTip("加载内置规划示例图纸 sample_data/sample_parcels.dxf 进行一键分析测试")
+        btn_sample.clicked.connect(self._load_sample)
+
         self.lbl_status = QLabel("[未选择文件]")
         self.lbl_status.setObjectName("BadgeWarning")
 
         dxf_layout.addWidget(dxf_label)
         dxf_layout.addWidget(self.dxf_input)
         dxf_layout.addWidget(btn_browse_dxf)
+        dxf_layout.addWidget(btn_sample)
         dxf_layout.addWidget(self.lbl_status)
         layout.addLayout(dxf_layout)
 
@@ -75,6 +80,13 @@ class FileZoneWidget(QFrame):
         )
         if file_path:
             self.dxf_input.setText(file_path)
+
+    def _load_sample(self):
+        sample_path = Path("sample_data/sample_parcels.dxf").resolve()
+        if sample_path.exists():
+            self.dxf_input.setText(str(sample_path))
+        else:
+            self.dxf_input.setText("sample_data/sample_parcels.dxf")
 
     def _browse_output_dir(self):
         dir_path = QFileDialog.getExistingDirectory(self, "选择输出结果存储目录")

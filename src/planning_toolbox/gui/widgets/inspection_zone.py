@@ -100,9 +100,14 @@ class InspectionZoneWidget(QFrame):
             self.warning_box.hide()
 
         # 图层标记
-        p_tag = "PARCEL [✓]" if info.get("has_parcel_layer") else "PARCEL [✗]"
-        b_tag = "BUILDING [✓]" if info.get("has_building_layer") else "BUILDING [✗]"
-        g_tag = "GREEN [✓]" if info.get("has_green_layer") else "GREEN [✗]"
+        counts = info.get("layer_counts", {})
+        p_count = counts.get("PARCEL", 0)
+        b_count = counts.get("BUILDING", 0)
+        g_count = counts.get("GREEN", 0)
+
+        p_tag = f"PARCEL [{p_count}]" if info.get("has_parcel_layer") else "PARCEL [0]"
+        b_tag = f"BUILDING [{b_count}]" if info.get("has_building_layer") else "BUILDING [0]"
+        g_tag = f"GREEN [{g_count}]" if info.get("has_green_layer") else "GREEN [0]"
         self.lbl_layers.setText(f"{p_tag}   {b_tag}   {g_tag}")
 
         # 数值

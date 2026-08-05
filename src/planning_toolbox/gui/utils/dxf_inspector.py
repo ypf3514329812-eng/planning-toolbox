@@ -58,6 +58,7 @@ def inspect_dxf_file(dxf_path: Path | str, layer_config_path: Optional[Path | st
     msp = doc.modelspace()
     
     found_std_layers = set()
+    layer_counts = {"PARCEL": 0, "BUILDING": 0, "GREEN": 0}
     total_polylines = 0
     open_polylines = 0
     valid_closed = 0
@@ -73,6 +74,8 @@ def inspect_dxf_file(dxf_path: Path | str, layer_config_path: Optional[Path | st
             if layer_orig in alias_map:
                 std_layer = alias_map[layer_orig]
                 found_std_layers.add(std_layer)
+                if std_layer in layer_counts:
+                    layer_counts[std_layer] += 1
 
             # 采样检查闭合性
             pts, is_closed, _ = points_from_dxf_polyline(entity)
@@ -112,6 +115,7 @@ def inspect_dxf_file(dxf_path: Path | str, layer_config_path: Optional[Path | st
         "has_building_layer": "BUILDING" in found_std_layers,
         "has_green_layer": "GREEN" in found_std_layers,
         "detected_layers": sorted(list(found_std_layers)),
+        "layer_counts": layer_counts,
         "total_polylines": total_polylines,
         "valid_closed": valid_closed,
         "open_polylines": open_polylines,
