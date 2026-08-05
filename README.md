@@ -38,7 +38,7 @@
 
 ## Quickstart Guide for Planning Students (使用指南)
 
-本工具箱无需修改任何 Python 源代码即可使用！
+本工具箱无需修改任何 Python 源代码即可使用！提供**图形化桌面工作台 (GUI)** 与 **命令行工具 (CLI)** 两种使用方式。
 
 ### 1. 环境准备与安装
 
@@ -48,18 +48,43 @@
 pip install -e .
 ```
 
-安装完成后，可以在任意终端直接使用 `planning-toolbox` 命令行工具。
+---
+
+### 2. Windows 本地图形化桌面工作台 (`v0.6.0-desktop-ui`)
+
+专为无编程背景的规划专业学生打造，提供简洁直观的图形化操作界面：
+
+```bash
+planning-toolbox-gui
+```
+*(或在项目根目录运行: `python scripts/run_gui.py`)*
+
+#### 界面四大区域:
+1. **文件与输出位置区**: 选择输入 DXF 文件与输出结果存储目录。原始 DXF 文件享有 100% 只读保护。
+2. **图纸数据检查区**: 自动扫描 DXF 单位 ($INSUNITS)、`PARCEL` / `BUILDING` / `GREEN` 图层、多段线总数、未闭合线数及嵌套环前置警告。若单位未知，自动触发红色高亮拦截。
+3. **分析任务与参数区**:
+   - **地块面积与编号**: 自动识别图层、编号、标注导出。
+   - **规划指标计算**: 输入必填楼层数，自动求交统计 FAR、建筑密度与绿地率。
+   - **拓扑与退线检查**: 输入退线要求米数 (如 5.0m)，按地块归属校验建筑退线。
+   - **GIS 导出/导入**: GeoJSON 矢量导出与 DXF 回导入（含坐标系非经纬度阻断保护）。
+4. **分析结果与报告区**: 实时进度条、指标卡片与表格、一键打开输出文件夹与生成文件。
+
+#### 独立 Windows `.exe` 单文件打包:
+若需要在未安装 Python 环境的 Windows 电脑上运行，可以编译生成单文件 `PlanningToolbox.exe`：
+```bash
+python scripts/package_exe.py
+```
+打包成功后，可在 `dist/PlanningToolbox.exe` 找到独立的双击运行程序。
 
 ---
 
-### 2. 统一命令行工具 (`planning-toolbox`)
+### 3. 统一命令行工具 (`planning-toolbox`)
 
 #### A. 地块面积与编号工具 (Parcel Calculator)
 扫描 DXF 中的地块边界，计算面积、自动编号并标注导出：
 ```bash
 planning-toolbox parcel --dxf sample_data/sample_parcels.dxf --output output/
 ```
-*(向后兼容脚本: `python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf`)*
 
 #### B. 图层标准化与空白模板 (Layer Standardization & Template)
 生成城乡规划标准空白 CAD 模板：
@@ -70,7 +95,6 @@ planning-toolbox layer template --output output/template.dxf
 ```bash
 planning-toolbox layer standardize --dxf input.dxf --output output/
 ```
-*(向后兼容脚本: `python scripts/run_layer_tool.py ...`)*
 
 #### C. GIS ↔ CAD 数据转换 (GIS Data Bridge)
 导出 CAD 图纸至 GeoJSON 矢量文件：
@@ -81,27 +105,18 @@ planning-toolbox gis export --dxf sample_data/sample_parcels.dxf --output output
 ```bash
 planning-toolbox gis import --geojson sample_data/sample_parcels.geojson --output output/ --unit m
 ```
-GeoJSON 坐标不会自动转换。导出结果默认不声明 CRS；只有在确认坐标系且坐标已经完成转换时，才在配置中填写 `gis.crs`。导入带有 WGS84/经纬度声明的 GeoJSON 会被阻止，避免把经纬度误当作 CAD 米制坐标。
-*(向后兼容脚本: `python scripts/run_gis_bridge.py ...`)*
 
 #### D. 规划指标自动核算 (Planning Indicators)
 分析 CAD DXF 中的 `PARCEL`、`BUILDING`、`GREEN` 图层，核算容积率 (FAR)、建筑密度与绿地率：
 ```bash
 planning-toolbox indicator --dxf sample_data/sample_parcels.dxf --floors 6 --output output/
 ```
-DXF 指标计算不再默认假设楼层数；存在 BUILDING 图层时必须通过 `--floors` 或配置项 `default_floors` 明确提供。
-单地块指标快速试算：
-```bash
-planning-toolbox indicator --site-area 10000 --building-footprint 2500 --total-building 20000 --green-area 3500
-```
-*(向后兼容脚本: `python scripts/run_indicators_tool.py ...`)*
 
 #### E. 规则与拓扑检查 (Rules & Topology Validator)
 自动扫描 CAD 拓扑错误（未闭合、自交）及建筑退线合规性（如退线 5.0m）：
 ```bash
 planning-toolbox validate --dxf sample_data/sample_parcels.dxf --setback 5.0
 ```
-*(向后兼容脚本: `python scripts/run_validator_tool.py --dxf sample_data/sample_parcels.dxf --setback 5.0`)*
 
 ---
 
@@ -109,7 +124,7 @@ planning-toolbox validate --dxf sample_data/sample_parcels.dxf --setback 5.0
 
 1. **`UNITS` 未设置警告 (`ERR_UNIT_UNKNOWN`)**
    - 当 CAD 图纸单位未明确设置 ($INSUNITS = 0) 时，工具箱将拦截执行以防误算。
-   - **解决办法**：优先在 AutoCAD 中打开图纸，输入 `UNITS` 命令将插入缩放单位设为【米】，重新保存 DXF；如确实知道图纸单位，也可在配置中同时设置 `fallback_unit: 'm'` 与 `strict_unit_check: false`，或在校验命令中使用 `--fallback-unit m`。
+   - **解决办法**：优先在 AutoCAD 中打开图纸，输入 `UNITS` 命令将插入缩放单位设为【米】，重新保存 DXF；或在界面退线参数中显式选择单位回退值。
 
 2. **PowerShell 权限问题**
    - 若在 Windows PowerShell 中出现“禁止运行脚本”提示，请以管理员身份打开 PowerShell 并运行：
@@ -125,7 +140,7 @@ planning-toolbox validate --dxf sample_data/sample_parcels.dxf --setback 5.0
 
 ## Automated Test Suite (自动化测试)
 
-运行全部 65 项回归测试：
+运行全部 71 项回归测试：
 
 ```bash
 pytest
@@ -140,4 +155,6 @@ pytest
 - `v0.2.0-gis-bridge`: Phase 2 GIS ↔ CAD 数据桥梁稳定版 (43/43 测试通过)
 - `v0.3.0-indicators`: Phase 3 规划指标自动核算引擎稳定版 (46/46 测试通过)
 - `v0.4.0-validators`: Phase 4 规则与拓扑检查引擎稳定版 (49/49 测试通过)
-- `v0.5.0-polish`: Phase 5 工程完善与 UX 升级版 (65/65 测试通过，引入统一 CLI)
+- `v0.5.0-polish`: Phase 5 工程完善与后端重构版 (65/65 测试通过，修正重叠建筑并集与未已知 CRS 阻断)
+- `v0.6.0-desktop-ui`: Phase 6 Windows 本地桌面可视化工作台 (71/71 测试通过，提供完整 PySide6 界面与打包支持)
+

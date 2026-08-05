@@ -1,6 +1,6 @@
 """Planning Toolbox (城乡规划 CAD–GIS 自动化辅助工具箱)"""
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 # Public API surface
 from planning_toolbox.cad.parcels.calculator import process_parcels, detect_nested_rings

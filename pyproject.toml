@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "planning-toolbox"
-version = "0.5.0"
+version = "0.6.0"
 description = "城乡规划 CAD–GIS 自动化辅助工具箱 (Planning Toolbox)"
 readme = "README.md"
 authors = [
@@ -15,6 +15,7 @@ dependencies = [
     "ezdxf>=1.1.0",
     "shapely>=2.0.0",
     "pyyaml>=6.0",
+    "pyside6>=6.0.0",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +25,7 @@ dev = [
 
 [project.scripts]
 planning-toolbox = "planning_toolbox.cli:main"
+planning-toolbox-gui = "planning_toolbox.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
