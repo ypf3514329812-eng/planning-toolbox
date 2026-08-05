@@ -23,7 +23,11 @@
 - **GeoJSON 导出**：自动将地块几何与全套属性（`parcel_id`, `area_m2`, `area_ha`, `geometry_status`, `source_layer`）导出为 RFC 7946 GeoJSON FeatureCollection，可直接拖入 QGIS / ArcGIS Pro。
 - **GeoJSON 导入**：支持将 GIS 矢量边界导入生成 CAD DXF `LWPOLYLINE` 图层。
 
-### 5. 原始文件“零破坏”保证 (Zero-Mutation Guarantee)
+### 5. 规划指标自动核算 (Planning Indicators Engine)
+- **指标范围**：容积率 (FAR)、建筑密度 (Building Density %)、绿地率 (Green Ratio %) 及用地面积分类统计。
+- **CAD 自动相交分析**：自动对 `PARCEL`、`BUILDING`、`GREEN` 图层的多边形空间求交，计算各地块内部建筑占地与绿地面积。
+
+### 6. 原始文件“零破坏”保证 (Zero-Mutation Guarantee)
 - 读取 DXF 时只进行内存解析，标注文件写出至独立的 `*_labeled.dxf`，原始 DXF 文件通过 SHA-256 校验对比保证 100% 字节级无修改。
 
 ---
@@ -47,12 +51,6 @@ pip install -e .
 ```bash
 python scripts/run_parcel_tool.py --dxf sample_data/sample_parcels.dxf
 ```
-
-可选参数：
-- `--config path/to/config.yaml` — 使用自定义配置文件
-- `--output path/to/output_dir` — 自定义输出目录
-- `--verbose` — 显示详细调试信息
-- `--version` — 显示版本号
 
 运行后会在 `output/` 目录中自动生成：
 
@@ -89,6 +87,20 @@ python scripts/run_gis_bridge.py --export-geojson sample_data/sample_parcels.dxf
 python scripts/run_gis_bridge.py --import-geojson input.geojson --output output/
 ```
 
+### 5. 规划指标自动核算工具 (Phase 3)
+
+分析 CAD DXF 中的 `PARCEL`、`BUILDING`、`GREEN` 图层，核算各地块容积率、建筑密度及绿地率：
+
+```bash
+python scripts/run_indicators_tool.py --dxf input.dxf --output output/
+```
+
+或进行单地块指标快速试算：
+
+```bash
+python scripts/run_indicators_tool.py --site-area 10000 --building-footprint 2500 --total-building 20000 --green-area 3500
+```
+
 ---
 
 ## Manual CAD & GIS Validation Guide (AutoCAD / ArcGIS 人工核验指南)
@@ -99,7 +111,7 @@ python scripts/run_gis_bridge.py --import-geojson input.geojson --output output/
 
 ## Automated Test Suite (自动化测试)
 
-运行全部 43 项回归测试：
+运行全部 46 项回归测试：
 
 ```bash
 pytest
@@ -112,3 +124,4 @@ pytest
 - `v0.1.0-mvp1`: MVP-1 初始版本
 - `v0.1.1-stable`: RC1 稳定化稳定版 (39/39 测试通过, 零破坏验证)
 - `v0.2.0-gis-bridge`: Phase 2 GIS ↔ CAD 数据桥梁稳定版 (43/43 测试通过)
+- `v0.3.0-indicators`: Phase 3 规划指标自动核算引擎稳定版 (46/46 测试通过)
