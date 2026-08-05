@@ -27,7 +27,11 @@
 - **指标范围**：容积率 (FAR)、建筑密度 (Building Density %)、绿地率 (Green Ratio %) 及用地面积分类统计。
 - **CAD 自动相交分析**：自动对 `PARCEL`、`BUILDING`、`GREEN` 图层的多边形空间求交，计算各地块内部建筑占地与绿地面积。
 
-### 6. 原始文件“零破坏”保证 (Zero-Mutation Guarantee)
+### 6. 拓扑与建筑退线规则检查 (Rules & Topology Validators)
+- **拓扑检查**：自动扫描 CAD 图纸中的开放边界 (`OPEN`)、自交多边形 (`INVALID_GEOMETRY`) 及少于 3 顶点的退化图形。
+- **退线检查**：根据输入的建筑退线要求（如 5.0m），自动校验建筑基底是否越过用地红线退线边界。
+
+### 7. 原始文件“零破坏”保证 (Zero-Mutation Guarantee)
 - 读取 DXF 时只进行内存解析，标注文件写出至独立的 `*_labeled.dxf`，原始 DXF 文件通过 SHA-256 校验对比保证 100% 字节级无修改。
 
 ---
@@ -101,6 +105,14 @@ python scripts/run_indicators_tool.py --dxf input.dxf --output output/
 python scripts/run_indicators_tool.py --site-area 10000 --building-footprint 2500 --total-building 20000 --green-area 3500
 ```
 
+### 6. 规则与拓扑检查工具 (Phase 4)
+
+检查 CAD 图纸拓扑错误与建筑退线合规性：
+
+```bash
+python scripts/run_validator_tool.py --dxf sample_data/sample_parcels.dxf --setback 5.0
+```
+
 ---
 
 ## Manual CAD & GIS Validation Guide (AutoCAD / ArcGIS 人工核验指南)
@@ -111,7 +123,7 @@ python scripts/run_indicators_tool.py --site-area 10000 --building-footprint 250
 
 ## Automated Test Suite (自动化测试)
 
-运行全部 46 项回归测试：
+运行全部 49 项回归测试：
 
 ```bash
 pytest
@@ -125,3 +137,4 @@ pytest
 - `v0.1.1-stable`: RC1 稳定化稳定版 (39/39 测试通过, 零破坏验证)
 - `v0.2.0-gis-bridge`: Phase 2 GIS ↔ CAD 数据桥梁稳定版 (43/43 测试通过)
 - `v0.3.0-indicators`: Phase 3 规划指标自动核算引擎稳定版 (46/46 测试通过)
+- `v0.4.0-validators`: Phase 4 规则与拓扑检查引擎稳定版 (49/49 测试通过)

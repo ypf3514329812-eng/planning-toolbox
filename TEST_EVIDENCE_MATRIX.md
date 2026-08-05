@@ -10,7 +10,7 @@ This matrix maps every single requirement and test case to its execution status,
 
 ---
 
-## 1. Automated Unit & Geometry Tests (Pytest 43/43 PASS)
+## 1. Automated Unit & Geometry Tests (Pytest 49/49 PASS)
 
 | Test ID | Test Category | Description / Verification Target | Status | Evidence Log |
 | :--- | :--- | :--- | :---: | :--- |
@@ -26,6 +26,9 @@ This matrix maps every single requirement and test case to its execution status,
 | **GIS-003**   | GIS Data Bridge| GeoJSON to CAD DXF polyline boundary import | **PASS** | `pytest_output.txt` |
 | **GIS-004**   | GIS Data Bridge| GeoJSON import output path collision protection | **PASS** | `pytest_output.txt` |
 | **GIS-005**   | GIS Data Bridge| CAD -> GeoJSON -> CAD DXF roundtrip fidelity | **PASS** | `pytest_output.txt` |
+| **IND-001**   | Indicators    | Manual calculation of FAR (2.0), Density (25%), Green (35%) | **PASS** | `pytest_output.txt` |
+| **IND-002**   | Indicators    | Zero site area protection (`ZERO_SITE_AREA`) | **PASS** | `pytest_output.txt` |
+| **IND-003**   | Indicators    | DXF layer spatial intersection for PARCEL, BUILDING, GREEN | **PASS** | `pytest_output.txt` |
 | **LAYER-001** | Layer Manager | Blank planning DXF template generation | **PASS** | `pytest_output.txt` |
 | **LAYER-002** | Layer Manager | Layer standardization and remapping | **PASS** | `pytest_output.txt` |
 | **LAYER-003** | Layer Manager | Unknown layer remapping report generation | **PASS** | `pytest_output.txt` |
@@ -58,6 +61,9 @@ This matrix maps every single requirement and test case to its execution status,
 | **UNIT-005**  | Unit Safety | Strict rejection of silent meter assumption | **PASS** | `pytest_output.txt` |
 | **UNIT-006**  | Unit Safety | Legacy unit error handling | **PASS** | `pytest_output.txt` |
 | **UNIT-007**  | Unit Safety | Unspecified DXF unit strict check blocked | **PASS** | `pytest_output.txt` |
+| **VAL-001**   | Rules Validator| Topology validator for valid, open, self-intersecting polylines | **PASS** | `pytest_output.txt` |
+| **VAL-002**   | Rules Validator| Building setback compliance check (`COMPLIANT`) | **PASS** | `pytest_output.txt` |
+| **VAL-003**   | Rules Validator| Building setback distance violation check (`VIOLATION`) | **PASS** | `pytest_output.txt` |
 
 ---
 
