@@ -790,8 +790,8 @@ def test_gis_tab_exposes_lightweight_and_extended_vector_modes(qapp, tmp_path):
     assert captured[-1][1]["requires_project_crs"] is True
 
 
-def test_gis_geojson_worker_writes_the_selected_dxf_unit(qapp, tmp_path):
-    """Regression: the GUI worker passes target_unit instead of an invalid keyword."""
+def test_gis_geojson_worker_writes_meter_parcel_for_next_workflow_stage(qapp, tmp_path):
+    """GUI import must feed the default concept/indicator parcel layer directly."""
     import json
     import ezdxf
 
@@ -828,6 +828,11 @@ def test_gis_geojson_worker_writes_the_selected_dxf_unit(qapp, tmp_path):
     worker._run_gis_import_task()
 
     assert results[0]["imported_polygons"] == 1
+    output = tmp_path / "projected_from_gis.dxf"
+    doc = ezdxf.readfile(output)
+    entities = list(doc.modelspace().query("LWPOLYLINE[layer=='PARCEL']"))
+    assert doc.header["$INSUNITS"] == 6
+    assert len(entities) == 1
     output = Path(results[0]["output_files"][0][1])
     assert ezdxf.readfile(output).header["$INSUNITS"] == 6
 

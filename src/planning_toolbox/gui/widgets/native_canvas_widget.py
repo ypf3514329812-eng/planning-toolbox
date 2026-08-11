@@ -256,11 +256,22 @@ class NativeCADPreviewCanvas(QWidget):
             item.setToolTip(f"块参照：{record['name']}")
             self._geometry_item_count += 1
 
+        drawing_rect = self.scene.itemsBoundingRect()
+        drawing_span = (
+            max(drawing_rect.width(), drawing_rect.height(), 1.0)
+            if drawing_rect.isValid()
+            else 1.0
+        )
+        # QGraphics text uses scene units by default.  Keep annotations small
+        # enough that dense CAD labels cannot dominate a fit-to-window view.
+        target_text_height = min(1.5, max(0.45, drawing_span * 0.008))
         for record in geometry.get("texts", []):
             x, y = record["point"]
             text_item = self.scene.addSimpleText(record["text"])
             text_item.setBrush(QBrush(QColor("#74766F")))
             text_item.setFont(QFont("Microsoft YaHei", 6))
+            native_height = max(text_item.boundingRect().height(), 1.0)
+            text_item.setScale(target_text_height / native_height)
             text_item.setPos(x, -y)
             self._geometry_item_count += 1
 

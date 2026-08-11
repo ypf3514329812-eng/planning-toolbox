@@ -440,6 +440,7 @@ class TaskWorker(QThread):
                 res_dxf, stats = import_geojson_to_dxf(
                     normalized,
                     out_dxf,
+                    target_layer="PARCEL",
                     target_unit=unit_str,
                     source_unit="m",
                 )
@@ -448,6 +449,7 @@ class TaskWorker(QThread):
             res_dxf, stats = import_geojson_to_dxf(
                 geojson_path,
                 out_dxf,
+                target_layer="PARCEL",
                 target_unit=unit_str,
             )
         assert_file_unchanged(geojson_path, source_sha256)

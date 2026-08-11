@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from math import cos, radians, sin
 from pathlib import Path
+import re
 from typing import Optional
 
 import ezdxf
@@ -169,10 +170,20 @@ class DxfPreviewWorker(QThread):
                 elif entity_type in {"TEXT", "MTEXT"}:
                     insert = getattr(entity.dxf, "insert", None)
                     if insert is not None:
-                        text = getattr(entity, "text", "")
+                        try:
+                            text = str(entity.plain_text()).strip()
+                        except Exception:
+                            text = str(entity.dxf.get("text", "")).strip()
+                        # Keep dense auto-generated stall IDs out of the
+                        # overview only.  The source DXF remains untouched.
+                        if (
+                            layer_orig == "CONCEPT_LABEL"
+                            and re.fullmatch(r"P\d{3}-\d+", text)
+                        ):
+                            continue
                         geometry["texts"].append({
                             "point": (float(insert.x), float(insert.y)),
-                            "text": str(text)[:32],
+                            "text": text[:32],
                         })
 
             self.result_ready.emit(info, geometry)

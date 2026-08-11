@@ -302,6 +302,17 @@ def _is_image_road_centerline_layer(layer_name: str) -> bool:
     return str(layer_name or "").strip().upper() == "BW_ROAD_CENTERLINE_CANDIDATE"
 
 
+def _is_concept_setback_guide_layer(layer_name: str) -> bool:
+    """Recognise the generated setback guide as an outline, never a site slab.
+
+    The concept planner writes ``CONCEPT_SETBACK`` as an editable review aid.
+    It often overlaps the green and road polygons by design.  Turning that
+    guide into a SketchUp face creates coplanar geometry and visual artefacts
+    in top views, so it must remain a visible line-only boundary.
+    """
+    return str(layer_name or "").strip().upper() == "CONCEPT_SETBACK"
+
+
 def _entity_xdata_float(entity: Any, appid: str, group_code: int = 1040) -> float | None:
     """Read one optional numeric DXF XDATA value without making it mandatory."""
     try:
@@ -1135,6 +1146,15 @@ def _road_local_tangent_frames(
 
     widths = sorted(float(frame["width_m"]) for frame in frames)
     width_m = widths[len(widths) // 2]
+    # Local tangent pairing is only reliable for a ribbon-like road surface.
+    # A concave site-access loop can make distant, unrelated boundary segments
+    # look like a pair and yield 5–100 m "widths" in one object.  Generating
+    # curbs and pavement bands from that guess creates diagonal geometry across
+    # the site, so fall back to the clean editable source surface instead.
+    lower_width = widths[max(0, round((len(widths) - 1) * 0.10))]
+    upper_width = widths[min(len(widths) - 1, round((len(widths) - 1) * 0.90))]
+    if upper_width / max(lower_width, 1e-9) > 3.5:
+        return []
     sidewalk_width_m = _road_sidewalk_width(width_m, settings)
     station_span = float(frames[-1]["station_m"]) - float(frames[0]["station_m"])
     length_m = station_span + sum(
@@ -2882,12 +2902,25 @@ def export_sketchup_handoff(
             and centerline_corridor
             and centerline_confidence_policy == "trusted_only"
         )
-        if image_road_surface_suppressed:
+        setback_guide_outline = bool(
+            closed
+            and horizontal
+            and _is_concept_setback_guide_layer(layer)
+        )
+        surface_generation_suppressed = (
+            image_road_surface_suppressed or setback_guide_outline
+        )
+        if surface_generation_suppressed:
             object_data["surface_generation_suppressed"] = True
             object_data["surface_suppression_reason"] = (
                 "trusted_centerline_corridor_preferred"
+                if image_road_surface_suppressed
+                else "concept_setback_guide_outline"
             )
+        if image_road_surface_suppressed:
             stats["road_surface_generation_suppressed"] += 1
+        if setback_guide_outline:
+            stats["setback_guide_outline"] += 1
         entity_centerline_width_m = (
             _entity_xdata_float(entity, "PT_ROAD_WIDTH_M")
             if road_centerline_object
@@ -2941,7 +2974,7 @@ def export_sketchup_handoff(
                 and horizontal
                 and not is_building_footprint
                 and entity_type not in _FACE_TYPES
-                and not image_road_surface_suppressed
+                and not surface_generation_suppressed
             )
             else None
         )

@@ -8,6 +8,13 @@
 - 计划移除本机路径依赖，增加跨机器安装与 CI 验证；
 - 计划完善候选拆分/合并、黄金样例和全新环境安装验收。
 
+## [0.61.1] - 2026-08-11
+
+- Fixed the projected GIS import path so its editable CAD parcel is written to the shared `PARCEL` layer used by the next beginner workflow stages.
+- Made dense generated parking IDs unobtrusive in the native CAD overview and scaled preview annotations to the drawing extent.
+- SketchUp now preserves `CONCEPT_SETBACK` as an editable review outline and rejects unreliable local-tangent road details on concave site-access loops.
+- Verified a real ArcGIS Pro → CAD → SketchUp 2026 workflow with an editable model and exported overview images.
+
 ## [0.61.0] - 2026-08-11
 
 - 新增图转 CAD 候选复核窗口：CAD 全图定位、候选表、多选批量接受/拒绝、恢复待确认和撤销；

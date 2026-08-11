@@ -487,6 +487,71 @@ def test_handoff_styles_closed_site_surfaces_without_heavy_terrain(tmp_path):
     assert all("surface_style" not in item for item in massing_objects)
 
 
+def test_concept_setback_is_exported_as_a_review_outline_not_a_stacked_surface(tmp_path):
+    source = tmp_path / "concept_setback_guide.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add("CONCEPT_SETBACK")
+    doc.modelspace().add_lwpolyline(
+        [
+            (500000, 3400000),
+            (500080, 3400000),
+            (500080, 3400060),
+            (500000, 3400060),
+        ],
+        close=True,
+        dxfattribs={"layer": "CONCEPT_SETBACK"},
+    )
+    doc.saveas(source)
+
+    output = tmp_path / "concept_setback_guide.ptsu.json"
+    result = export_sketchup_handoff(source, output, _manifest())
+    guide = json.loads(output.read_text(encoding="utf-8"))["objects"][0]
+
+    assert guide["role"] == "other"
+    assert guide["closed"] is True
+    assert guide["surface_generation_suppressed"] is True
+    assert guide["surface_suppression_reason"] == "concept_setback_guide_outline"
+    assert "surface_style" not in guide
+    assert result["styled_site_surface_count"] == 0
+
+
+def test_concave_site_access_does_not_receive_unreliable_curved_road_details(tmp_path):
+    source = tmp_path / "concave_site_access.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add("CONCEPT_ROAD")
+    doc.modelspace().add_lwpolyline(
+        [
+            (500000, 3400000),
+            (500100, 3400000),
+            (500100, 3400100),
+            (500000, 3400100),
+            (500000, 3400080),
+            (500080, 3400080),
+            (500080, 3400020),
+            (500000, 3400020),
+        ],
+        close=True,
+        dxfattribs={"layer": "CONCEPT_ROAD"},
+    )
+    doc.saveas(source)
+
+    output = tmp_path / "concave_site_access.ptsu.json"
+    result = export_sketchup_handoff(
+        source,
+        output,
+        _manifest(),
+        model_detail_level="presentation",
+        road_design_preset="complete",
+    )
+    road = json.loads(output.read_text(encoding="utf-8"))["objects"][0]
+
+    assert road["surface_style"]["geometry_hint"]["eligible"] is False
+    assert road["surface_style"]["geometry_hint"]["shape"] == "irregular"
+    assert result["road_curved_hint_count"] == 0
+
+
 def test_complete_road_preset_is_bounded_and_width_aware(tmp_path):
     source = tmp_path / "road_cross_section.dxf"
     doc = ezdxf.new("R2010")

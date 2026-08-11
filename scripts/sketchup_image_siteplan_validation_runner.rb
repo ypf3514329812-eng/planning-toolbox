@@ -53,6 +53,12 @@ UI.start_timer(3.0, false) do
     raise 'No Planning Toolbox project root was created.' if roots.empty?
 
     root = roots.first
+    # Validation images should show the normal end-user presentation, not
+    # SketchUp's optional hidden-geometry debugging view.  Curved road bands
+    # deliberately hide their triangulation edges, which otherwise appear as
+    # distracting white diagonals in a screenshot inherited from a debug
+    # template.
+    model.rendering_options['DrawHidden'] = false
     object_groups = root.entities.grep(Sketchup::Group).select do |group|
       group.get_attribute(dictionary, 'object_id')
     end
@@ -129,6 +135,7 @@ UI.start_timer(3.0, false) do
       JSON.pretty_generate(
         'status' => 'PASS',
         'sketchup_version' => Sketchup.version,
+        'draw_hidden_geometry' => model.rendering_options['DrawHidden'],
         'handoff_path' => handoff_path,
         'model_path' => model_path,
         'axonometric_path' => axonometric_path,

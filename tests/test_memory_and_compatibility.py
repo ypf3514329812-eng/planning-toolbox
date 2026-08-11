@@ -324,6 +324,40 @@ def test_preview_parser_renders_image_cad_candidate_layers_semantically(tmp_path
     assert captured["geometry"]["linework"][0]["role"] == "road_centerline"
 
 
+def test_preview_parser_hides_dense_generated_parking_labels_but_keeps_other_notes(tmp_path):
+    from planning_toolbox.gui.widgets.canvas_widget import DxfPreviewWorker
+
+    path = tmp_path / "concept_labels.dxf"
+    doc = ezdxf.new("R2010")
+    modelspace = doc.modelspace()
+    modelspace.add_text(
+        "P001-01", dxfattribs={"layer": "CONCEPT_LABEL"}
+    ).set_placement((0, 0))
+    modelspace.add_text(
+        "P001-02", dxfattribs={"layer": "CONCEPT_LABEL"}
+    ).set_placement((2, 0))
+    modelspace.add_text(
+        "ACCESS / FIRE GUIDE 8.0m", dxfattribs={"layer": "CONCEPT_LABEL"}
+    ).set_placement((4, 0))
+    modelspace.add_text(
+        "B001-01", dxfattribs={"layer": "CONCEPT_LABEL"}
+    ).set_placement((6, 0))
+    doc.saveas(path)
+
+    captured = {}
+    worker = DxfPreviewWorker(path)
+    worker.result_ready.connect(
+        lambda info, geometry: captured.update(info=info, geometry=geometry)
+    )
+    worker.run()
+
+    assert captured["info"]["valid_dxf"] is True
+    assert [item["text"] for item in captured["geometry"]["texts"]] == [
+        "ACCESS / FIRE GUIDE 8.0m",
+        "B001-01",
+    ]
+
+
 def test_native_canvas_exports_full_scene_png(tmp_path):
     output = tmp_path / "native_preview.png"
     code = rf'''
