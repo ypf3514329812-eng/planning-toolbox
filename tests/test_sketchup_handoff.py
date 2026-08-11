@@ -281,6 +281,14 @@ def test_handoff_preserves_source_and_applies_local_origin(tmp_path):
     assert result["estimated_facade_module_count"] > 0
     assert result["floor_guide_segment_count"] == 20
     assert payload["summary"]["skipped_reasons"]["text_disabled"] == 1
+    quality_baseline = Path(result["quality_baseline_file"])
+    assert quality_baseline.is_file()
+    quality_payload = json.loads(quality_baseline.read_text(encoding="utf-8"))
+    assert quality_payload["workflow"] == "cad_to_sketchup"
+    assert quality_payload["inputs"]["source_sha256"] == source_hash
+    assert quality_payload["outputs"]["handoff_sha256"] == sha256_file(output)
+    assert quality_payload["summary"]["blocked_count"] == 0
+    assert result["output_files"][-1][1] == str(quality_baseline)
 
 
 def test_handoff_stable_ids_repeat_and_two_dimensional_mode(tmp_path):

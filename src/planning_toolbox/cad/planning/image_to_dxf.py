@@ -39,6 +39,9 @@ from skimage.morphology import (
 )
 
 from planning_toolbox.cad.planning.semantic_palette import SEMANTIC_GUIDE_PALETTE
+from planning_toolbox.project.quality_baseline import (
+    write_image_to_cad_quality_baseline,
+)
 from planning_toolbox.utils.file_integrity import assert_file_unchanged, sha256_file
 
 
@@ -3427,6 +3430,11 @@ def _convert_black_white_linework(
             ("Exact-pixel road review overlay PNG", str(output_road_review_overlay)),
         ],
     }
+    quality_baseline = write_image_to_cad_quality_baseline(result)
+    result["quality_baseline_file"] = quality_baseline["path"]
+    result["quality_baseline"] = quality_baseline
+    result["output_files"].append(("图片转 CAD 质量基线 JSON", quality_baseline["path"]))
+    return result
 
 
 def convert_image_to_dxf(
@@ -3739,7 +3747,7 @@ def convert_image_to_dxf(
         output_files.append(("原图与语义引导叠加检查 PNG", str(output_alignment)))
     if guide_source is not None:
         assert_file_unchanged(guide_source, guide_hash)
-    return {
+    result = {
         "task_type": "image_to_dxf",
         "dxf_file": str(output_dxf),
         "source_file": str(source),
@@ -3764,3 +3772,8 @@ def convert_image_to_dxf(
         "semantic_scene_summary": semantic_scene["summary"],
         "output_files": output_files,
     }
+    quality_baseline = write_image_to_cad_quality_baseline(result)
+    result["quality_baseline_file"] = quality_baseline["path"]
+    result["quality_baseline"] = quality_baseline
+    result["output_files"].append(("图片转 CAD 质量基线 JSON", quality_baseline["path"]))
+    return result

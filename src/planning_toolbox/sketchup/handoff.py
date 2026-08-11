@@ -34,6 +34,9 @@ from planning_toolbox.project.semantic_scene import (
     is_presentation_fill_entity,
     load_semantic_scene_for_dxf,
 )
+from planning_toolbox.project.quality_baseline import (
+    write_cad_to_sketchup_quality_baseline,
+)
 from planning_toolbox.knowledge.sketchup_modeling import (
     get_modeling_building_details,
     get_modeling_building_rule,
@@ -3382,7 +3385,7 @@ def export_sketchup_handoff(
         ] = image_candidate_building_count
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return {
+    result = {
         "task_type": "sketchup_export",
         "source_file": str(source),
         "source_sha256": source_hash,
@@ -3513,6 +3516,11 @@ def export_sketchup_handoff(
             ),
         ],
     }
+    quality_baseline = write_cad_to_sketchup_quality_baseline(result)
+    result["quality_baseline_file"] = quality_baseline["path"]
+    result["quality_baseline"] = quality_baseline
+    result["output_files"].append(("CAD 转 SketchUp 质量基线 JSON", quality_baseline["path"]))
+    return result
 
 
 __all__ = [

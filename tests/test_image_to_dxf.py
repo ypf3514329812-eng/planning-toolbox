@@ -105,6 +105,15 @@ def test_image_to_dxf_traces_layers_and_preserves_source(tmp_path):
     assert preview.exists()
     assert report.exists()
     assert Path(result["semantic_scene_file"]).exists()
+    quality_baseline = Path(result["quality_baseline_file"])
+    assert quality_baseline.is_file()
+    quality_payload = json.loads(quality_baseline.read_text(encoding="utf-8"))
+    assert quality_payload["workflow"] == "image_to_cad"
+    assert quality_payload["inputs"]["source_sha256"] == before
+    assert quality_payload["outputs"]["dxf_sha256"] == sha256_file(output_dxf)
+    assert quality_payload["summary"]["status"] == "review_required"
+    assert quality_payload["summary"]["blocked_count"] == 0
+    assert result["output_files"][-1][1] == str(quality_baseline)
     assert result["semantic_scene_summary"]["semantic_object_count"] >= 4
     assert result["task_type"] == "image_to_dxf"
     assert result["region_counts"]["AI_BUILDING"] >= 2

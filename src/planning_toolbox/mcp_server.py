@@ -17,7 +17,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
-SERVER_VERSION = "0.58.1"
+SERVER_VERSION = "0.59.0"
 DEFAULT_CONFIG = Path(
     os.environ.get("APPDATA", str(Path.home()))
 ) / "PlanningToolbox" / "mcp_bridge.json"

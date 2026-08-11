@@ -16,7 +16,7 @@ module PlanningToolbox
   module SketchUpMcpBridge
     HOST = '127.0.0.1'
     DEFAULT_PORT = 8765
-    VERSION = '0.58.1'
+    VERSION = '0.59.0'
     WATCHDOG_INTERVAL = 3.0
     CONFIG_DIR = File.join(ENV.fetch('APPDATA', Dir.tmpdir), 'PlanningToolbox')
     CONFIG_PATH = ENV.fetch(
