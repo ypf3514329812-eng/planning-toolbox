@@ -1,0 +1,331 @@
+# Planning Toolbox 中国规划制图辅助图层库
+#
+# 重要：以下颜色、线宽和线型是依据常见中国规划/总图表达整理的
+# “学习辅助默认值”，不是对所有地区、所有设计院和所有报批阶段都
+# 强制适用的全国统一数值。具体项目须服从最新版正式标准、地方规定
+# 和学校/设计单位制图要求。
+
+schema: planning-toolbox-china-drafting-layers-v1
+style_authority: assistive_defaults_not_statutory_values
+unit: m
+
+layers:
+  PARCEL:
+    name_cn: "用地红线/地块边界"
+    group: "控制边界"
+    color: 2
+    lineweight: 30
+    linetype: "Continuous"
+    aliases: ["地块", "地块红线", "用地红线", "宗地界", "PARCEL_BOUND", "PARCEL_LINE"]
+
+  SITE_BOUNDARY:
+    name_cn: "设计范围线"
+    group: "控制边界"
+    color: 6
+    lineweight: 35
+    linetype: "DASHED"
+    aliases: ["设计范围", "规划范围", "研究范围", "SITE", "STUDY_BOUNDARY"]
+
+  ADMIN_BOUNDARY:
+    name_cn: "行政区界"
+    group: "控制边界"
+    color: 6
+    lineweight: 30
+    linetype: "DASHDOT"
+    aliases: ["行政界线", "行政区界", "境界", "ADMIN", "BOUNDARY_ADMIN"]
+
+  ECO_REDLINE:
+    name_cn: "生态保护红线"
+    group: "国土空间控制线"
+    color: 1
+    lineweight: 40
+    linetype: "DASHDOT"
+    aliases: ["生态红线", "生态保护红线", "ECOLOGICAL_REDLINE"]
+
+  PERMANENT_FARMLAND:
+    name_cn: "永久基本农田"
+    group: "国土空间控制线"
+    color: 3
+    lineweight: 35
+    linetype: "DASHED"
+    aliases: ["基本农田", "永久基本农田", "BASIC_FARMLAND"]
+
+  URBAN_DEVELOPMENT_BOUNDARY:
+    name_cn: "城镇开发边界"
+    group: "国土空间控制线"
+    color: 6
+    lineweight: 40
+    linetype: "DASHDOT"
+    aliases: ["开发边界", "城镇开发边界", "UDB", "URBAN_BOUNDARY"]
+
+  LAND_USE:
+    name_cn: "用地分类"
+    group: "用地"
+    color: 7
+    lineweight: 18
+    linetype: "Continuous"
+    aliases: ["用地", "用地性质", "用地分类", "LANDUSE", "LAND_USE_CLASS"]
+
+  ROAD_CENTER:
+    name_cn: "道路中心线"
+    group: "道路交通"
+    color: 1
+    lineweight: 18
+    linetype: "CENTER"
+    aliases: ["中心线", "道路中心线", "ROAD_CL", "CENTERLINE"]
+
+  ROAD_REDLINE:
+    name_cn: "道路红线"
+    group: "道路交通"
+    color: 1
+    lineweight: 30
+    linetype: "Continuous"
+    aliases: ["道路红线", "红线", "ROAD_LINE", "ROAD_BOUNDARY"]
+
+  ROAD_EDGE:
+    name_cn: "道路边线"
+    group: "道路交通"
+    color: 8
+    lineweight: 20
+    linetype: "Continuous"
+    aliases: ["道路边线", "路缘线", "车行道边线", "ROAD_EDGE_LINE", "CURB"]
+
+  ROAD:
+    name_cn: "道路面"
+    group: "道路交通"
+    color: 8
+    lineweight: 13
+    linetype: "Continuous"
+    aliases: ["道路", "车行道", "ROAD_AREA", "CARRIAGEWAY"]
+
+  SIDEWALK:
+    name_cn: "人行道"
+    group: "道路交通"
+    color: 9
+    lineweight: 13
+    linetype: "Continuous"
+    aliases: ["人行道", "步行道", "PEDESTRIAN", "FOOTPATH"]
+
+  FIRE_ACCESS:
+    name_cn: "消防车道"
+    group: "道路交通"
+    color: 1
+    lineweight: 25
+    linetype: "DASHED"
+    aliases: ["消防车道", "消防通道", "FIRE_LANE", "FIRE_ROAD"]
+
+  TRANSPORTATION:
+    name_cn: "综合交通设施"
+    group: "道路交通"
+    color: 8
+    lineweight: 25
+    linetype: "Continuous"
+    aliases: ["交通设施", "综合交通", "TRANSPORT", "TRANSPORT_FACILITY"]
+
+  PARKING:
+    name_cn: "停车位/停车场"
+    group: "道路交通"
+    color: 2
+    lineweight: 13
+    linetype: "Continuous"
+    aliases: ["停车位", "停车场", "车位", "PARKING_STALL", "CAR_PARK"]
+
+  ENTRANCE:
+    name_cn: "出入口"
+    group: "道路交通"
+    color: 1
+    lineweight: 25
+    linetype: "Continuous"
+    aliases: ["出入口", "入口", "主入口", "ENTRANCE_EXIT", "ACCESS"]
+
+  EXIT:
+    name_cn: "出口"
+    group: "道路交通"
+    color: 1
+    lineweight: 25
+    linetype: "Continuous"
+    aliases: ["出口", "次入口", "EXIT_ONLY"]
+
+  BUILDING:
+    name_cn: "规划建筑轮廓"
+    group: "建筑"
+    color: 4
+    lineweight: 30
+    linetype: "Continuous"
+    aliases: ["建筑", "建筑轮廓", "建筑基底", "规划建筑", "BUILDING_FOOTPRINT"]
+
+  EXISTING_BUILDING:
+    name_cn: "保留建筑"
+    group: "建筑"
+    color: 8
+    lineweight: 25
+    linetype: "Continuous"
+    aliases: ["现状建筑", "保留建筑", "EXISTING", "EXIST_BUILDING"]
+
+  DEMOLITION:
+    name_cn: "拆除建筑"
+    group: "建筑"
+    color: 1
+    lineweight: 18
+    linetype: "DASHED"
+    aliases: ["拆除建筑", "拆迁建筑", "DEMOLISH", "REMOVE_BUILDING"]
+
+  SETBACK:
+    name_cn: "建筑退界线"
+    group: "建筑"
+    color: 6
+    lineweight: 18
+    linetype: "DASHED"
+    aliases: ["退界线", "建筑退界", "建筑控制线", "SETBACK_LINE"]
+
+  GREEN:
+    name_cn: "绿地范围"
+    group: "景观生态"
+    color: 3
+    lineweight: 18
+    linetype: "Continuous"
+    aliases: ["绿地", "绿化", "GREEN_SPACE", "PARK"]
+
+  LANDSCAPE:
+    name_cn: "景观空间"
+    group: "景观生态"
+    color: 3
+    lineweight: 13
+    linetype: "Continuous"
+    aliases: ["景观", "景观节点", "LANDSCAPE_AREA"]
+
+  TREE:
+    name_cn: "乔木/树木"
+    group: "景观生态"
+    color: 3
+    lineweight: 13
+    linetype: "Continuous"
+    aliases: ["树木", "乔木", "行道树", "TREE_BLOCK", "PLANTING_TREE"]
+
+  WATER:
+    name_cn: "水体"
+    group: "景观生态"
+    color: 5
+    lineweight: 18
+    linetype: "Continuous"
+    aliases: ["水体", "水面", "景观水体", "WATER_AREA"]
+
+  WATER_SYSTEM:
+    name_cn: "水系"
+    group: "自然资源"
+    color: 5
+    lineweight: 25
+    linetype: "Continuous"
+    aliases: ["河流", "河道", "水系", "HYDROGRAPHY", "RIVER"]
+
+  TERRAIN_CONTOUR:
+    name_cn: "等高线"
+    group: "地形"
+    color: 32
+    lineweight: 9
+    linetype: "Continuous"
+    aliases: ["等高线", "地形线", "CONTOUR", "TOPO"]
+
+  ELEVATION:
+    name_cn: "高程点"
+    group: "地形"
+    color: 32
+    lineweight: 13
+    linetype: "Continuous"
+    aliases: ["高程", "标高", "高程点", "SPOT_HEIGHT", "ELEV"]
+
+  PUBLIC_SERVICE:
+    name_cn: "公共服务设施"
+    group: "设施"
+    color: 6
+    lineweight: 20
+    linetype: "Continuous"
+    aliases: ["公共服务", "公共设施", "配套设施", "PUBLIC_FACILITY", "POI_SERVICE"]
+
+  MUNICIPAL_FACILITY:
+    name_cn: "市政公用设施"
+    group: "设施"
+    color: 30
+    lineweight: 20
+    linetype: "Continuous"
+    aliases: ["市政设施", "公用设施", "MUNICIPAL", "UTILITY_FACILITY"]
+
+  DISASTER_PREVENTION:
+    name_cn: "综合防灾设施"
+    group: "设施"
+    color: 1
+    lineweight: 25
+    linetype: "DASHED"
+    aliases: ["防灾设施", "避难场所", "应急设施", "DISASTER", "EMERGENCY"]
+
+  PARCEL_LABEL:
+    name_cn: "地块编号"
+    group: "标注"
+    color: 2
+    lineweight: 18
+    linetype: "Continuous"
+    aliases: ["地块编号", "地块标注", "PARCEL_TAG"]
+
+  ANNOTATION:
+    name_cn: "规划注释"
+    group: "标注"
+    color: 7
+    lineweight: 18
+    linetype: "Continuous"
+    aliases: ["文字", "注释", "说明", "TEXT", "NOTE"]
+
+  DIMENSION:
+    name_cn: "尺寸标注"
+    group: "标注"
+    color: 7
+    lineweight: 13
+    linetype: "Continuous"
+    aliases: ["尺寸", "尺寸标注", "DIM", "DIMS"]
+
+  HATCH:
+    name_cn: "填充图案"
+    group: "标注"
+    color: 9
+    lineweight: 9
+    linetype: "Continuous"
+    aliases: ["填充", "图案填充", "PATTERN", "FILL"]
+
+  TITLE_BLOCK:
+    name_cn: "图签/标题栏"
+    group: "图幅"
+    color: 7
+    lineweight: 25
+    linetype: "Continuous"
+    aliases: ["图签", "标题栏", "图框", "TITLE", "BORDER"]
+
+  LEGEND:
+    name_cn: "图例"
+    group: "图幅"
+    color: 7
+    lineweight: 18
+    linetype: "Continuous"
+    aliases: ["图例", "LEGENDS", "KEY"]
+
+  NORTH_ARROW:
+    name_cn: "指北针"
+    group: "图幅"
+    color: 7
+    lineweight: 25
+    linetype: "Continuous"
+    aliases: ["指北针", "北针", "NORTH", "COMPASS"]
+
+  SCALE_BAR:
+    name_cn: "比例尺"
+    group: "图幅"
+    color: 7
+    lineweight: 18
+    linetype: "Continuous"
+    aliases: ["比例尺", "图示比例尺", "SCALE", "GRAPHIC_SCALE"]
+
+  GRID:
+    name_cn: "坐标格网"
+    group: "图幅"
+    color: 8
+    lineweight: 9
+    linetype: "DASHED"
+    aliases: ["坐标网", "格网", "坐标格网", "COORD_GRID"]

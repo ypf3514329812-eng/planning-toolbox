@@ -5,6 +5,7 @@ from planning_toolbox.core.models.parcel import Parcel
 from planning_toolbox.core.geometry.parser import points_from_dxf_polyline, parse_parcel_geometry, get_interior_label_point
 from planning_toolbox.cad.io.dxf_reader import read_dxf_parcels
 from planning_toolbox.cad.annotation.dxf_writer import export_labeled_dxf
+from planning_toolbox.utils.file_integrity import sha256_file, assert_file_unchanged
 
 def detect_nested_rings(candidate_valid_parcels: List[Parcel]) -> None:
     """
@@ -60,6 +61,7 @@ def process_parcels(
       (parcels, labeled_dxf_path, csv_report_path, summary_report_path)
     """
     dxf_path = Path(dxf_path)
+    source_sha256_before = sha256_file(dxf_path)
     output_dir_path = Path(output_dir) if output_dir else Path(config.get("output", {}).get("dir", "output"))
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -161,11 +163,14 @@ def process_parcels(
     from planning_toolbox.gis.io.exporter import export_parcels_to_geojson
     geojson_path = output_dir_path / f"{stem}.geojson"
     gis_cfg = config.get("gis", {})
+    normalize_to_meters = bool(gis_cfg.get("normalize_to_meters", False))
+    coordinate_scale = area_scale ** 0.5 if normalize_to_meters else 1.0
     export_parcels_to_geojson(
         all_parcels,
         geojson_path,
         crs_name=gis_cfg.get("crs"),
-        coordinate_units=unit_name,
+        coordinate_units="Meters" if normalize_to_meters else unit_name,
+        coordinate_scale=coordinate_scale,
     )
 
     # 6. Generate Summary Text Report
@@ -180,6 +185,7 @@ def process_parcels(
     report_content = (
         f"=== Planning Toolbox Parcel Analysis Report ===\n"
         f"Source DXF: {dxf_path.name}\n"
+        f"Source SHA-256: {source_sha256_before}\n"
         f"Detected Unit: {unit_name}\n"
         f"-----------------------------------------------\n"
         f"DXF entities scanned: {scanned_entities_count}\n"
@@ -197,5 +203,7 @@ def process_parcels(
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report_content)
+
+    assert_file_unchanged(dxf_path, source_sha256_before)
 
     return all_parcels, labeled_dxf_path, csv_path, report_path

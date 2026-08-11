@@ -69,6 +69,7 @@ def test_indicators_dxf_extraction(tmp_path):
     assert ind.far == 1.0
     assert ind.building_density_pct == 25.0
     assert ind.green_ratio_pct == 9.0
+    assert "Source SHA-256:" in report_file.read_text(encoding="utf-8")
 
 
 def test_indicators_union_overlapping_buildings_and_require_explicit_floors(tmp_path):

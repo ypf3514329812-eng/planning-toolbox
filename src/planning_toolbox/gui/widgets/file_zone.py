@@ -12,6 +12,7 @@ class FileZoneWidget(QFrame):
     """
     file_changed = Signal(str)          # DXF 文件切换信号
     output_dir_changed = Signal(str)    # 输出目录切换信号
+    dwg_conversion_requested = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -31,7 +32,7 @@ class FileZoneWidget(QFrame):
         
         top_bar.addStretch()
         safety_notice = QLabel("🔒 原始 DXF 只读无损保护 (Zero-Mutation)")
-        safety_notice.setStyleSheet("color: #38bdf8; font-size: 11px; font-weight: 600;")
+        safety_notice.setStyleSheet("color: #607A6A; font-size: 11px; font-weight: 600;")
         top_bar.addWidget(safety_notice)
         layout.addLayout(top_bar)
 
@@ -41,12 +42,16 @@ class FileZoneWidget(QFrame):
         dxf_label.setFixedWidth(90)
         
         self.dxf_input = QLineEdit()
-        self.dxf_input.setPlaceholderText("可点击浏览、选择示例图纸或直接拖拽 *.dxf 文件至此窗口...")
+        self.dxf_input.setPlaceholderText("选择或拖拽 *.dxf；DWG 请使用右侧“DWG 导入”...")
         self.dxf_input.setToolTip("选择或拖拽 AutoCAD DXF 矢量图纸文件进行分析")
         self.dxf_input.textChanged.connect(self._on_dxf_text_changed)
 
         btn_browse_dxf = QPushButton("📁 浏览 DXF...")
         btn_browse_dxf.clicked.connect(self._browse_dxf)
+
+        btn_browse_dwg = QPushButton("🔄 DWG 导入...")
+        btn_browse_dwg.setToolTip("使用本机 ODA File Converter 转为新的 DXF，不上传、不覆盖原 DWG")
+        btn_browse_dwg.clicked.connect(self._browse_dwg)
 
         btn_sample = QPushButton("⭐ 一键示例图纸")
         btn_sample.setObjectName("SampleButton")
@@ -59,6 +64,7 @@ class FileZoneWidget(QFrame):
         dxf_layout.addWidget(dxf_label)
         dxf_layout.addWidget(self.dxf_input)
         dxf_layout.addWidget(btn_browse_dxf)
+        dxf_layout.addWidget(btn_browse_dwg)
         dxf_layout.addWidget(btn_sample)
         dxf_layout.addWidget(self.lbl_status)
         layout.addLayout(dxf_layout)
@@ -103,6 +109,13 @@ class FileZoneWidget(QFrame):
         if file_path:
             self.dxf_input.setText(file_path)
 
+    def _browse_dwg(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择 AutoCAD DWG 图纸", "", "AutoCAD DWG 文件 (*.dwg)"
+        )
+        if file_path:
+            self.dwg_conversion_requested.emit(file_path)
+
     def _load_sample(self):
         sample_path = Path("sample_data/sample_parcels.dxf").resolve()
         if sample_path.exists():
@@ -138,3 +151,6 @@ class FileZoneWidget(QFrame):
 
     def set_dxf_path(self, path: str):
         self.dxf_input.setText(path)
+
+    def set_output_dir(self, path: str):
+        self.out_input.setText(path)

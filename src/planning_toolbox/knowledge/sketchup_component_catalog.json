@@ -1,0 +1,395 @@
+{
+  "schema_version": 1,
+  "catalog_id": "planning-toolbox-sketchup-component-library",
+  "version": "2026.08.10",
+  "updated_at": "2026-08-10",
+  "name": "Planning Toolbox 轻量 SketchUp 组件库",
+  "purpose": "为城乡规划 CAD→SU 模型提供可复用、可追溯、按需加载的真实组件",
+  "runtime_policy": {
+    "load_mode": "lazy_shared_component_definition",
+    "network_required": false,
+    "api_required": false,
+    "allow_licenses": [
+      "CC0-1.0"
+    ],
+    "component_file_budget_bytes": 8000000,
+    "bundled_component_budget_bytes": 100000000,
+    "bundled_component_total_bytes": 1220468,
+    "fallback": "procedural_native_geometry",
+    "user_components_take_priority": true,
+    "description": "只在实际需要相应对象时加载 SKP 定义，同类对象共享定义，不复制整套几何。"
+  },
+  "sources": [
+    {
+      "id": "kenney-city-kit-roads-2.0",
+      "title": "Kenney City Kit (Roads) 2.0",
+      "url": "https://www.kenney.nl/assets/city-kit-roads",
+      "download_url": "https://www.kenney.nl/media/pages/assets/city-kit-roads/74288c9459-1741864740/kenney_city-kit-roads.zip",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "bundled_selection": [
+        "light-curved.glb"
+      ],
+      "reason": "低多边形道路与街道设施，尺寸小，适合规划模型重复布置。"
+    },
+    {
+      "id": "kenney-city-kit-suburban-2.0",
+      "title": "Kenney City Kit (Suburban) 2.0",
+      "url": "https://kenney.nl/assets/city-kit-suburban",
+      "download_url": "https://kenney.nl/media/pages/assets/city-kit-suburban/2c871b7af2-1745479373/kenney_city-kit-suburban_20.zip",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "bundled_selection": [
+        "tree-large.glb",
+        "tree-small.glb",
+        "planter.glb"
+      ],
+      "reason": "风格一致的低多边形树木与花池，可替换过于示意的程序化圆冠树。"
+    },
+    {
+      "id": "kenney-city-kit-commercial-2.1",
+      "title": "Kenney City Kit (Commercial) 2.1",
+      "url": "https://www.kenney.nl/assets/city-kit-commercial",
+      "download_url": "https://www.kenney.nl/media/pages/assets/city-kit-commercial/a742d900eb-1753115042/kenney_city-kit-commercial_2.1.zip",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "bundled_selection": [
+        "detail-awning-wide.glb",
+        "detail-overhang-wide.glb",
+        "detail-parasol-a.glb"
+      ],
+      "reason": "可复用入口雨篷、挑檐和场地遮阳构件，改善盒子化建筑的入口表达。"
+    },
+    {
+      "id": "shapespark-low-poly-plants",
+      "title": "Shapespark Low Poly Exterior Plants Kit",
+      "url": "https://github.com/shapespark/shapespark-assets",
+      "license": "CC0-1.0",
+      "creator": "Shapespark",
+      "bundled_selection": [],
+      "reason": "官方说明为手工制作并针对实时渲染优化；当前先作为可选扩展来源，避免一次打包整套高数量植物。"
+    },
+    {
+      "id": "quaternius-cc0-packs",
+      "title": "Quaternius CC0 Asset Packs",
+      "url": "https://quaternius.com/",
+      "license": "CC0-1.0",
+      "creator": "Quaternius",
+      "bundled_selection": [],
+      "reason": "提供 OBJ、FBX、glTF 等模块化低多边形资源；当前只列为候选，需逐包审核风格与尺寸后再精选。"
+    },
+    {
+      "id": "kaykit-city-builder-bits-1.0",
+      "title": "KayKit City Builder Bits 1.0",
+      "url": "https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0",
+      "license": "CC0-1.0",
+      "creator": "KayKit",
+      "bundled_selection": [
+        "road_straight_crossing.gltf",
+        "trafficlight_A.gltf"
+      ],
+      "reason": "GitHub 项目明确提供 32 个以上面向城市构建的低多边形模型与 glTF/OBJ/FBX 格式；本轮仅精选斑马线道路块和交通灯，保留 CC0 来源并按需加载，避免整包纹理拖大软件。"
+    },
+    {
+      "id": "planning-toolbox-native-components-2026",
+      "title": "Planning Toolbox Native Procedural Components 2026",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "license": "CC0-1.0",
+      "creator": "Planning Toolbox",
+      "bundled_selection": [
+        "parked_car",
+        "bench",
+        "shrub_cluster",
+        "bollard",
+        "bus_shelter"
+      ],
+      "reason": "本项目用 SketchUp Ruby 原生几何生成的可审计组件，补充停车、公共空间和道路界面表达；组件按需共享加载，不引入外部模型包。"
+    }
+  ],
+  "components": [
+    {
+      "asset_id": "tree_large",
+      "role": "vegetation_tree_large",
+      "source_id": "kenney-city-kit-suburban-2.0",
+      "source_file": "suburban_tree-large.glb",
+      "source_sha256": "16D1F95C149BC727A953A473CF20BF21DE9BF1A88747C4F9D2EEB4AC7D43E291",
+      "skp_file": "pt_tree_large.skp",
+      "skp_sha256": "82FA28B5C1251FBF55FA2F522D66716F9B2EE0CDF241390C43432F020883CC24",
+      "skp_size_bytes": 24991,
+      "source_bounds_m": [0.2104, 0.243, 0.767],
+      "target_bounds_m": [4.8, 4.8, 7.0],
+      "automatic_use": true,
+      "instance_budget": 500
+    },
+    {
+      "asset_id": "tree_small",
+      "role": "vegetation_tree_small",
+      "source_id": "kenney-city-kit-suburban-2.0",
+      "source_file": "suburban_tree-small.glb",
+      "source_sha256": "5F63359E5F392609D7617CC98070855CA1FFD4F4B4BC3978A5FF56ECE88A58D6",
+      "skp_file": "pt_tree_small.skp",
+      "skp_sha256": "6AC946BF23ECB7EC45BC6657F354A9792F4190607670BA7BF06E524E0D745942",
+      "skp_size_bytes": 27961,
+      "source_bounds_m": [0.2104, 0.243, 0.567],
+      "target_bounds_m": [3.2, 3.2, 4.2],
+      "automatic_use": true,
+      "instance_budget": 500
+    },
+    {
+      "asset_id": "planter",
+      "role": "site_planter",
+      "source_id": "kenney-city-kit-suburban-2.0",
+      "source_file": "suburban_planter.glb",
+      "source_sha256": "A876E87D908F0397DCAF94B7705835447825C4C5B39195319535415386542C17",
+      "skp_file": "pt_planter.skp",
+      "skp_sha256": "093FF82B2C24D199AA13F45B4CA51557914B2E628E8C8ABFC0B132E5B6455BDE",
+      "skp_size_bytes": 47501,
+      "source_bounds_m": [0.4, 0.3, 0.1771],
+      "target_bounds_m": [1.2, 0.9, 0.55],
+      "automatic_use": false,
+      "block_aliases": [
+        "PT_PLANTER",
+        "PLANTER",
+        "花池",
+        "树池"
+      ],
+      "instance_budget": 200
+    },
+    {
+      "asset_id": "street_light",
+      "role": "street_light",
+      "source_id": "kenney-city-kit-roads-2.0",
+      "source_file": "roads_light-curved.glb",
+      "source_sha256": "E9FF06EAD9D9B14EDDD7BF40FA20E31B898FDE2D59ADE940EEBE60685D335F6D",
+      "skp_file": "pt_street_light.skp",
+      "skp_sha256": "3DA104BF0B34383F7DC29823B070926D856D64D1E520FDD9CAC2940D2A45017F",
+      "skp_size_bytes": 21539,
+      "source_bounds_m": [0.05, 0.225, 0.675],
+      "target_bounds_m": [0.45, 1.8, 6.0],
+      "automatic_use": true,
+      "instance_budget": 120
+    },
+    {
+      "asset_id": "awning_wide",
+      "role": "entrance_awning",
+      "source_id": "kenney-city-kit-commercial-2.1",
+      "source_file": "commercial_detail-awning-wide.glb",
+      "source_sha256": "D37BA34BE414CEF84DB966E548E2C558088AEC3FDF68763565B9CAF95C11AC5F",
+      "skp_file": "pt_awning_wide.skp",
+      "skp_sha256": "41BC3DE7932F1177C4F660996E2CD358EC2E83AB81F43B2A80E43DDC681419A0",
+      "skp_size_bytes": 19413,
+      "source_bounds_m": [0.8, 0.1479, 0.4],
+      "target_bounds_m": [3.8, 1.2, 0.65],
+      "automatic_use": true,
+      "instance_budget": 200
+    },
+    {
+      "asset_id": "overhang_wide",
+      "role": "entrance_overhang",
+      "source_id": "kenney-city-kit-commercial-2.1",
+      "source_file": "commercial_detail-overhang-wide.glb",
+      "source_sha256": "E94C5D603936A225C8D37650044CEBDAE99C112C49273DC19A3EE3FB2DCA2BF0",
+      "skp_file": "pt_overhang_wide.skp",
+      "skp_sha256": "98111A73D0F1C308FC7580D1F6719FBEC692DFAD55A56C576DAEB08EED595287",
+      "skp_size_bytes": 18745,
+      "source_bounds_m": [1.0, 0.2, 0.4],
+      "target_bounds_m": [3.4, 1.0, 0.45],
+      "automatic_use": true,
+      "instance_budget": 200
+    },
+    {
+      "asset_id": "parasol",
+      "role": "site_parasol",
+      "source_id": "kenney-city-kit-commercial-2.1",
+      "source_file": "commercial_detail-parasol-a.glb",
+      "source_sha256": "70E636BEA8DC67C3BFD19B163333E824356118458C8C401017322EC43C10A7F7",
+      "skp_file": "pt_parasol.skp",
+      "skp_sha256": "7271FDC891984751D21A8EE62F0889876C16270DB9A742A3795E8818E2EC4155",
+      "skp_size_bytes": 33411,
+      "source_bounds_m": [0.3464, 0.4, 0.45],
+      "target_bounds_m": [3.0, 3.0, 2.7],
+      "automatic_use": false,
+      "block_aliases": [
+        "PT_PARASOL",
+        "PARASOL",
+        "UMBRELLA",
+        "遮阳伞"
+      ],
+      "instance_budget": 100
+    },
+    {
+      "asset_id": "road_crossing",
+      "role": "road_crossing",
+      "source_id": "kaykit-city-builder-bits-1.0",
+      "source_file": "kaykit_road_straight_crossing.glb",
+      "source_sha256": "DA0A9337F1AA52C68652412364E364AA9E1D8B496F7AB56F5EA83E5EBBF634C4",
+      "skp_file": "pt_road_crossing.skp",
+      "skp_sha256": "09E2941995E05EB4610B418D07773AFBE35BE501070E403291A921F05E98FD7C",
+      "skp_size_bytes": 50575,
+      "source_bounds_m": [2.0, 2.0, 0.1],
+      "target_bounds_m": [8.0, 8.0, 0.12],
+      "automatic_use": false,
+      "block_aliases": [
+        "PT_CROSSWALK",
+        "PT_CROSSWALK_FIXED",
+        "PT_CROSSWALK_MANUAL",
+        "PT_ROAD_CROSSING",
+        "CROSSWALK",
+        "斑马线",
+        "人行横道"
+      ],
+      "instance_budget": 80
+    },
+    {
+      "asset_id": "traffic_light",
+      "role": "traffic_light",
+      "source_id": "kaykit-city-builder-bits-1.0",
+      "source_file": "kaykit_trafficlight_A.glb",
+      "source_sha256": "235216430E94C7C86A2045ACC9110BC241C804DC801189A64A837229A811EEA9",
+      "skp_file": "pt_traffic_light.skp",
+      "skp_sha256": "98603B17D95C4C9389AD8CB19378ADF613F3FB26D766D3898345FBD36D85FFDA",
+      "skp_size_bytes": 98212,
+      "source_bounds_m": [0.1744, 0.1506, 0.7295],
+      "target_bounds_m": [0.9, 0.8, 5.0],
+      "automatic_use": false,
+      "block_aliases": [
+        "PT_TRAFFIC_LIGHT",
+        "TRAFFIC_LIGHT",
+        "SIGNAL_LIGHT",
+        "交通灯",
+        "信号灯",
+        "红绿灯"
+      ],
+      "instance_budget": 80
+    },
+    {
+      "asset_id": "parked_car",
+      "role": "site_parked_car",
+      "source_id": "planning-toolbox-native-components-2026",
+      "native_generator": "parked_car",
+      "skp_file": "pt_parked_car.skp",
+      "skp_sha256": "58261D85D85AFC854ED9C690A672C156EA35BCB8357B2D279CEA5A3C24A79BC9",
+      "skp_size_bytes": 182478,
+      "source_bounds_m": [4.52, 1.945, 1.37],
+      "target_bounds_m": [4.8, 2.0, 1.5],
+      "automatic_use": false,
+      "preserve_cad_rotation": true,
+      "block_aliases": [
+        "PT_PARKED_CAR",
+        "PARKED_CAR",
+        "CAR",
+        "小汽车",
+        "机动车"
+      ],
+      "instance_budget": 180
+    },
+    {
+      "asset_id": "bench",
+      "role": "site_bench",
+      "source_id": "planning-toolbox-native-components-2026",
+      "native_generator": "bench",
+      "skp_file": "pt_bench.skp",
+      "skp_sha256": "FAF61C59C9E95E235A37D568E1E1EF698C8019189AEDDE9AE7B00F2CEB8D584A",
+      "skp_size_bytes": 173103,
+      "source_bounds_m": [1.8, 1.0, 1.68],
+      "target_bounds_m": [1.8, 0.65, 1.2],
+      "automatic_use": false,
+      "preserve_cad_rotation": true,
+      "block_aliases": [
+        "PT_BENCH",
+        "BENCH",
+        "SEAT",
+        "座椅",
+        "休息座椅"
+      ],
+      "instance_budget": 120
+    },
+    {
+      "asset_id": "shrub_cluster",
+      "role": "vegetation_shrub_cluster",
+      "source_id": "planning-toolbox-native-components-2026",
+      "native_generator": "shrub_cluster",
+      "skp_file": "pt_shrub_cluster.skp",
+      "skp_sha256": "E28445D396CAF869A6F6905B0962B41ADCD97E661542E322EB31307BA8A598DC",
+      "skp_size_bytes": 173059,
+      "source_bounds_m": [2.5, 1.44, 1.35],
+      "target_bounds_m": [2.4, 1.6, 1.4],
+      "automatic_use": false,
+      "preserve_cad_rotation": true,
+      "block_aliases": [
+        "PT_SHRUB",
+        "PT_SHRUB_CLUSTER",
+        "SHRUB",
+        "灌木",
+        "灌木组"
+      ],
+      "instance_budget": 160
+    },
+    {
+      "asset_id": "bollard",
+      "role": "road_bollard",
+      "source_id": "planning-toolbox-native-components-2026",
+      "native_generator": "bollard",
+      "skp_file": "pt_bollard.skp",
+      "skp_sha256": "6B2BC9D724E2648E70597A071FD94B3017855FAC824AF04CA96AD462C0A7884D",
+      "skp_size_bytes": 167838,
+      "source_bounds_m": [0.32, 0.3043, 1.1],
+      "target_bounds_m": [0.32, 0.32, 1.0],
+      "automatic_use": false,
+      "preserve_cad_rotation": true,
+      "block_aliases": [
+        "PT_BOLLARD",
+        "BOLLARD",
+        "隔离柱",
+        "防撞柱"
+      ],
+      "instance_budget": 160
+    },
+    {
+      "asset_id": "bus_shelter",
+      "role": "road_bus_shelter",
+      "source_id": "planning-toolbox-native-components-2026",
+      "native_generator": "bus_shelter",
+      "skp_file": "pt_bus_shelter.skp",
+      "skp_sha256": "94FA9829BF716765D6A3D5F2AE4FE784FE2000BB2F78C52F7D58419C7E28FA50",
+      "skp_size_bytes": 181642,
+      "source_bounds_m": [4.0, 1.6, 3.16],
+      "target_bounds_m": [4.0, 1.6, 3.2],
+      "automatic_use": false,
+      "preserve_cad_rotation": true,
+      "block_aliases": [
+        "PT_BUS_SHELTER",
+        "BUS_SHELTER",
+        "公交站",
+        "公交候车亭"
+      ],
+      "instance_budget": 40
+    }
+  ],
+  "placement_rules": {
+    "tree": {
+      "large_asset_id": "tree_large",
+      "small_asset_id": "tree_small",
+      "large_radius_threshold_m": 1.8,
+      "fit_mode": "canopy_width_and_total_height",
+      "retain_deterministic_variation": true
+    },
+    "entrance": {
+      "office": "overhang_wide",
+      "commercial": "awning_wide",
+      "residential": "overhang_wide",
+      "campus": "awning_wide",
+      "generic": "overhang_wide",
+      "fit_mode": "target_width_depth_height"
+    },
+    "road_street_lights": {
+      "asset_id": "street_light",
+      "detail_level": "presentation",
+      "minimum_edge_length_m": 24.0,
+      "spacing_m": 18.0,
+      "end_margin_m": 6.0,
+      "max_instances_per_surface": 12,
+      "fit_mode": "target_width_depth_height"
+    }
+  }
+}

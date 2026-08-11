@@ -1,0 +1,32 @@
+name: Feature request
+description: 提议一个能减少重复工作或提高结果可信度的改进
+title: "[Feature] "
+labels: ["feature request"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题
+      description: 请从城乡规划学生、教师或研究者的实际任务出发描述。
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: 当前操作流程与期望流程
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: 专业边界和复核要求
+      description: 说明哪些结果必须由专业人员确认，是否涉及规范、坐标或源文件保护。
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 范围确认
+      options:
+        - label: 我理解 Planning Toolbox 不替代法定审批、设计复核或专业责任。
+          required: true

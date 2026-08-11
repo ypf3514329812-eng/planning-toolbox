@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "index_id": "planning-toolbox-sketchup-reference-patterns",
+  "version": "2026.08.10",
+  "storage_policy": {
+    "embedded_images": false,
+    "embedded_models": false,
+    "description": "只保存可追溯参考页面、图像检索词和可执行建模要点；图片按需查看，不打进运行包。"
+  },
+  "patterns": [
+    {
+      "id": "siteplan-layered-blackwhite",
+      "title": "总平面黑白分层线稿",
+      "visual_type": "black_white_site_plan",
+      "tags": ["总平面", "黑白", "图层", "课程作业"],
+      "geometry_recipe": "先建立地块、道路、建筑、绿地、停车和标注图层，再把闭合轮廓生成面，最后保留可锁定线稿底图。",
+      "review_checklist": ["比例依据明确", "建筑轮廓闭合", "道路连续", "文字不参与面积"],
+      "source_page": "https://github.com/OSGeo/OSGeoLive",
+      "image_search_query": "urban planning site plan black white CAD landscape architecture"
+    },
+    {
+      "id": "residential-courtyard",
+      "title": "居住组团围合庭院",
+      "visual_type": "residential_courtyard",
+      "tags": ["居住区", "庭院", "住宅", "建筑组团"],
+      "geometry_recipe": "建筑按组团边界形成半围合或围合空间，内部保留慢行、绿地和消防通行连续性，建筑高度按逐栋参数表达。",
+      "review_checklist": ["组团间距", "出入口", "消防通道", "绿地连续"],
+      "source_page": "https://www.ogc.org/standards/citygml/",
+      "image_search_query": "residential courtyard urban design 3d site plan SketchUp"
+    },
+    {
+      "id": "building-massing-variation",
+      "title": "多类型建筑体量",
+      "visual_type": "building_massing",
+      "tags": ["体量", "住宅", "办公", "商业", "校园"],
+      "geometry_recipe": "按建筑类型、楼层、层高和屋顶类型复用组件定义；同一类型共享立面窗口模块，避免每栋复制细碎几何。",
+      "review_checklist": ["楼层明确", "层高明确", "屋顶类型", "建筑用途"],
+      "source_page": "https://github.com/CityJSON/specs",
+      "image_search_query": "urban design building massing SketchUp component workflow"
+    },
+    {
+      "id": "curved-road-edge",
+      "title": "圆角道路与道路边界",
+      "visual_type": "curved_road_corridor",
+      "tags": ["道路", "圆弧", "人行道", "路缘"],
+      "geometry_recipe": "以中心线或成对边界生成局部切线带面，按站点生成路缘、人行道、中心虚线和方向箭头，弯道不强行拉直。",
+      "review_checklist": ["曲线连续", "道路宽度", "斑马线方向", "路缘不越界"],
+      "source_page": "https://github.com/TheDuckCow/godot-road-generator",
+      "image_search_query": "curved street urban design 3d model road corridor"
+    },
+    {
+      "id": "road-cross-section",
+      "title": "道路横断面表达",
+      "visual_type": "road_cross_section",
+      "tags": ["道路", "横断面", "车行道", "人行道", "绿化带"],
+      "geometry_recipe": "把车行道、人行道、路缘、绿化隔离带和设施作为可独立关闭的层，宽度来自项目参数，不从图片像素猜测。",
+      "review_checklist": ["车道净宽", "人行道宽度", "隔离带", "设施位置"],
+      "source_page": "https://github.com/streetmix/streetmix",
+      "image_search_query": "street cross section urban planning diagram 3d"
+    },
+    {
+      "id": "roundabout-ring",
+      "title": "环岛环带与中心绿岛",
+      "visual_type": "roundabout",
+      "tags": ["环岛", "道路", "绿岛", "交通组织"],
+      "geometry_recipe": "仅对明确命名的环岛或圆环生成环带，保留中心绿岛空腔和分段编辑边界，不把普通圆形符号误判为道路。",
+      "review_checklist": ["入口数量", "环带宽度", "中心岛", "方向线"],
+      "source_page": "https://github.com/Project-OSRM/osrm-backend",
+      "image_search_query": "roundabout urban design site plan 3d model"
+    },
+    {
+      "id": "zebra-crossing-aligned",
+      "title": "与道路方向一致的斑马线",
+      "visual_type": "crosswalk_detail",
+      "tags": ["斑马线", "道路设施", "方向", "精细建模"],
+      "geometry_recipe": "条带长轴平行车辆行驶方向；优先使用可信道路中心线或局部切线匹配，模糊交叉口保留人工复核状态。",
+      "review_checklist": ["条带方向", "道路匹配", "不覆盖中心线", "人工复核标记"],
+      "source_page": "https://std.samr.gov.cn/gb/search/gbDetailed?id=40C4523A3FB81115E06397BE0A0AE2D3",
+      "image_search_query": "zebra crossing urban street 3d model plan"
+    },
+    {
+      "id": "parking-row-with-cars",
+      "title": "停车位行列与车辆",
+      "visual_type": "parking_layout",
+      "tags": ["停车", "车位", "车辆", "居住区"],
+      "geometry_recipe": "停车位按 5.0×2.5 米等用户确认尺寸保留为块引用；车辆只在明确停车对象或用户开启展示细节时生成，并限制实例数量。",
+      "review_checklist": ["车位尺寸", "通道宽度", "车辆朝向", "不遮挡消防"],
+      "source_page": "https://github.com/SketchUp/sketchup-ruby-api-tutorials",
+      "image_search_query": "parking layout residential site plan SketchUp model"
+    },
+    {
+      "id": "tree-row-and-shrub-edge",
+      "title": "行道树与灌木边界",
+      "visual_type": "vegetation_edge",
+      "tags": ["树木", "灌木", "绿地", "道路界面"],
+      "geometry_recipe": "树木和灌木使用共享定义，按冠幅量化并保留少量确定性旋转与尺度变化；线性绿地使用有界实例预算。",
+      "review_checklist": ["树距", "冠幅", "视线", "避免越界"],
+      "source_page": "https://www.kenney.nl/assets/city-kit-suburban",
+      "image_search_query": "urban street tree shrub planting 3d site plan"
+    },
+    {
+      "id": "public-space-furniture",
+      "title": "公共空间座椅与花池",
+      "visual_type": "public_space_furniture",
+      "tags": ["广场", "座椅", "花池", "公共空间"],
+      "geometry_recipe": "座椅、花池和遮阳构件作为可编辑组件插入公共空间，不自动布满场地；优先沿边界、节点和入口布置。",
+      "review_checklist": ["通行净宽", "节点位置", "组件尺度", "可维护性"],
+      "source_page": "https://www.kenney.nl/assets/city-kit-commercial",
+      "image_search_query": "urban plaza bench planter SketchUp model"
+    },
+    {
+      "id": "bus-stop-street-edge",
+      "title": "公交站点街道界面",
+      "visual_type": "bus_stop",
+      "tags": ["公交站", "道路设施", "候车亭", "街道家具"],
+      "geometry_recipe": "候车亭沿道路边界布置，顶棚、立柱、透明侧板和座椅共享一个组件，留出人行道通行空间。",
+      "review_checklist": ["站点朝向", "人行道净宽", "道路退距", "站点可达"],
+      "source_page": "https://github.com/MapStore/mapstore2",
+      "image_search_query": "bus shelter streetscape urban design 3d model"
+    },
+    {
+      "id": "waterfront-green-edge",
+      "title": "滨水绿地与岸线",
+      "visual_type": "waterfront_edge",
+      "tags": ["水体", "滨水", "绿地", "岸线"],
+      "geometry_recipe": "水体、岸线、亲水平台和绿地分层表达；岸线保留折线或弧线，不用单一矩形覆盖复杂边界。",
+      "review_checklist": ["岸线连续", "高程提示", "亲水安全", "水体不误算建筑"],
+      "source_page": "https://github.com/OSGeo/grass",
+      "image_search_query": "waterfront urban landscape site plan SketchUp"
+    },
+    {
+      "id": "entrance-and-canopy",
+      "title": "建筑入口与雨篷",
+      "visual_type": "building_entrance",
+      "tags": ["建筑入口", "雨篷", "立面", "商业"],
+      "geometry_recipe": "入口按建筑类型选择雨篷或挑檐，放在建筑边界外侧并保留可编辑细节组，避免整栋建筑只显示成无差别方块。",
+      "review_checklist": ["入口位置", "雨篷朝向", "不穿墙", "入口数量"],
+      "source_page": "https://www.kenney.nl/assets/city-kit-commercial",
+      "image_search_query": "architecture entrance canopy urban building SketchUp"
+    },
+    {
+      "id": "flat-gable-hip-roofs",
+      "title": "平屋顶、双坡顶与四坡顶",
+      "visual_type": "roof_variation",
+      "tags": ["屋顶", "住宅", "建筑类型", "体量"],
+      "geometry_recipe": "屋顶类型只接受明确参数或图层语义；平屋顶加女儿墙，坡屋顶由边界和脊线生成，避免把楼层数误当屋顶高度。",
+      "review_checklist": ["屋顶类型", "坡度", "女儿墙", "高度来源"],
+      "source_page": "https://www.ogc.org/standards/citygml/",
+      "image_search_query": "residential roof variation urban design 3d model"
+    },
+    {
+      "id": "image-to-cad-clean-linework",
+      "title": "AI 参考图转清晰黑白线稿",
+      "visual_type": "image_to_cad_reference",
+      "tags": ["图转 CAD", "黑白", "正交", "线稿"],
+      "geometry_recipe": "输入优先为白底黑线、俯视正交、无阴影和透视的图；先把候选分层，再用人工确认尺寸和用途，最后进入 SU。",
+      "review_checklist": ["场地实际宽度", "线条闭合", "比例依据", "候选人工确认"],
+      "source_page": "https://github.com/ezdxf/ezdxf",
+      "image_search_query": "black white urban planning CAD site plan linework"
+    },
+    {
+      "id": "underlay-alignment",
+      "title": "底图锁定与模型叠合",
+      "visual_type": "locked_raster_underlay",
+      "tags": ["底图", "对齐", "比例", "复核"],
+      "geometry_recipe": "底图使用原图哈希和明确实际宽度锁定，放在独立参考组；模型对象以同一近原点坐标叠合，禁止无依据缩放。",
+      "review_checklist": ["原图哈希", "实际宽度", "原点", "模型对齐"],
+      "source_page": "https://github.com/SketchUp/sketchup-ruby-api-tutorials",
+      "image_search_query": "SketchUp site plan image underlay alignment workflow"
+    },
+    {
+      "id": "course-presentation-lod",
+      "title": "课程作业分级细节",
+      "visual_type": "level_of_detail",
+      "tags": ["课程作业", "LOD", "模型轻量化", "展示"],
+      "geometry_recipe": "体量层只保留建筑、道路和地块；课程层增加道路和入口；展示层按预算增加树木、窗户、座椅和车辆。",
+      "review_checklist": ["模型用途", "实例预算", "文件大小", "可编辑性"],
+      "source_page": "https://www.ogc.org/standards/citygml/",
+      "image_search_query": "urban design level of detail massing model SketchUp"
+    },
+    {
+      "id": "model-qa-review",
+      "title": "模型生成后的人工复核",
+      "visual_type": "model_quality_review",
+      "tags": ["质量检查", "复核", "课程作业", "成果整理"],
+      "geometry_recipe": "按对象统计建筑、道路、绿地、停车和设施数量，检查未闭合轮廓、越界、重叠、异常高度和未匹配候选。",
+      "review_checklist": ["数量核对", "边界核对", "高度核对", "底图叠合"],
+      "source_page": "https://github.com/3dcitydb/3dcitydb",
+      "image_search_query": "3d city model quality assurance urban planning"
+    },
+    {
+      "id": "component-library-reuse",
+      "title": "共享组件库复用",
+      "visual_type": "shared_component_library",
+      "tags": ["组件库", "复用", "内存", "SketchUp"],
+      "geometry_recipe": "同类树木、车辆、座椅和设施只加载一个定义，实例通过位置、方向和目标尺寸变化；用户组件可按同名文件优先替换。",
+      "review_checklist": ["定义数量", "实例数量", "组件来源", "替换可逆"],
+      "source_page": "https://developer.sketchup.com/article-entity-overview",
+      "image_search_query": "SketchUp component library urban planning workflow"
+    },
+    {
+      "id": "road-furniture-node",
+      "title": "道路节点设施组合",
+      "visual_type": "street_furniture_node",
+      "tags": ["道路节点", "隔离柱", "交通灯", "街道家具"],
+      "geometry_recipe": "交通灯、隔离柱、斑马线和候车亭按明确 CAD 块或用户设置放置，方向由道路局部切线辅助，模糊情形标记复核。",
+      "review_checklist": ["方向", "设施间距", "可达性", "不自动推断信号控制"],
+      "source_page": "https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0",
+      "image_search_query": "street furniture road node urban design model"
+    },
+    {
+      "id": "parking-green-interface",
+      "title": "停车与绿地界面",
+      "visual_type": "parking_green_interface",
+      "tags": ["停车", "绿地", "树池", "界面"],
+      "geometry_recipe": "停车位保持清晰行列，树池和灌木沿边界布置，车辆展示与车位方向一致，不用植物组件遮挡车位和消防通道。",
+      "review_checklist": ["车位可见", "树池位置", "车道转弯", "通道无遮挡"],
+      "source_page": "https://www.kenney.nl/assets/city-kit-suburban",
+      "image_search_query": "parking green interface residential urban design 3d"
+    },
+    {
+      "id": "presentation-material-hierarchy",
+      "title": "展示材质层级",
+      "visual_type": "presentation_materials",
+      "tags": ["材质", "色彩", "展示", "低饱和"],
+      "geometry_recipe": "建筑、道路、绿地、水体和设施使用低饱和区分色；颜色服务于阅读，不以纹理堆叠替代几何和图层语义。",
+      "review_checklist": ["对比度", "材质数量", "图层可读", "无纹理依赖"],
+      "source_page": "https://github.com/OSGeo/OSGeoLive",
+      "image_search_query": "low saturation urban planning 3d site plan presentation"
+    }
+  ]
+}

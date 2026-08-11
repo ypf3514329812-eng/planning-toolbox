@@ -70,9 +70,9 @@ def inspect_dxf_file(dxf_path: Path | str, layer_config_path: Optional[Path | st
         if entity.dxftype() in ('LWPOLYLINE', 'POLYLINE'):
             total_polylines += 1
             layer_orig = str(entity.dxf.layer).upper()
+            std_layer = alias_map.get(layer_orig)
             
-            if layer_orig in alias_map:
-                std_layer = alias_map[layer_orig]
+            if std_layer:
                 found_std_layers.add(std_layer)
                 if std_layer in layer_counts:
                     layer_counts[std_layer] += 1
@@ -86,7 +86,11 @@ def inspect_dxf_file(dxf_path: Path | str, layer_config_path: Optional[Path | st
                 invalid_geom += 1
             elif status == "VALID" and poly:
                 valid_closed += 1
-                valid_geoms.append(poly)
+                # Nested-ring semantics apply to parcel boundaries only.
+                # Buildings and green areas commonly sit inside parcels and
+                # must not create false hole warnings in the inspection UI.
+                if std_layer == "PARCEL":
+                    valid_geoms.append(poly)
 
     # 3. 前置检测嵌套环
     nested_ring_count = 0

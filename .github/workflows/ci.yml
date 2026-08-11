@@ -1,0 +1,68 @@
+name: Planning Toolbox CI
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python-version }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.13"]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package and test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Compile Python sources
+        run: python -m compileall -q src scripts
+
+      - name: Run regression tests
+        run: python -m pytest -q
+
+      - name: Verify CLI entry point
+        run: planning-toolbox --version
+
+  release-hygiene:
+    name: Release hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Reject generated evidence and local packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden='(^|/)(build|dist|output|test_artifacts)/|(^|/).*\.skb$|(^|/).*mcp_bridge\.json$|(^|/).*mcp_bridge\.log$'
+          if git ls-files | grep -E "$forbidden"; then
+            echo "Generated or local runtime files are tracked."
+            exit 1
+          fi
+
+      - name: Check required public documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in README.md CONTRIBUTING.md SECURITY.md ARCHITECTURE.md THIRD_PARTY_NOTICES.md; do
+            test -f "$file" || { echo "Missing $file"; exit 1; }
+          done

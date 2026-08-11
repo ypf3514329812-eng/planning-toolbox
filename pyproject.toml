@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "planning-toolbox"
-version = "0.6.0"
+version = "0.58.1"
 description = "城乡规划 CAD–GIS 自动化辅助工具箱 (Planning Toolbox)"
 readme = "README.md"
 authors = [
@@ -16,22 +16,37 @@ dependencies = [
     "shapely>=2.0.0",
     "pyyaml>=6.0",
     "pyside6>=6.0.0",
+    "matplotlib>=3.7.0",
+    "openpyxl>=3.1.0",
+    "reportlab>=4.0.0",
+    "scikit-image>=0.22.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
 ]
+gis = [
+    "pyproj>=3.6.0",
+]
 
 [project.scripts]
 planning-toolbox = "planning_toolbox.cli:main"
 planning-toolbox-gui = "planning_toolbox.gui:main"
+planning-toolbox-mcp = "planning_toolbox.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-planning_toolbox = ["config/*.yaml"]
+planning_toolbox = [
+    "config/*.yaml",
+    "knowledge/*.json",
+    "sketchup/plugin/*.rb",
+    "sketchup/plugin/planning_toolbox_sketchup/*.rb",
+    "sketchup/plugin/planning_toolbox_sketchup/*.txt",
+    "sketchup/plugin/planning_toolbox_sketchup/components/*.skp",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

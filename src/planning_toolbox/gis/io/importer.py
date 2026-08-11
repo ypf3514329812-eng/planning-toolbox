@@ -1,11 +1,13 @@
 import json
 import logging
+import math
 from pathlib import Path
 from typing import Union, List, Tuple, Dict, Any
 import ezdxf
+import shapely.affinity
 import shapely.geometry
 from planning_toolbox.core.units.unit_manager import (
-    UnitError, get_dxf_unit_code_for_name,
+    UnitError, get_dxf_unit_code_for_name, get_linear_scale_to_m,
 )
 
 logger = logging.getLogger("planning_toolbox")
@@ -19,6 +21,7 @@ def import_geojson_to_dxf(
     output_dxf_path: Union[Path, str],
     target_layer: str = "PARCEL_FROM_GIS",
     target_unit: str | None = None,
+    source_unit: str | None = None,
 ) -> Tuple[Path, Dict[str, Any]]:
     """
     Imports vector boundary polygons from a GeoJSON file into a DXF drawing.
@@ -68,6 +71,15 @@ def import_geojson_to_dxf(
     if target_layer not in doc.layers:
         doc.layers.add(name=target_layer, color=3)  # Color 3 = Green
 
+    coordinate_scale = 1.0
+    if source_unit is not None and target_unit is not None:
+        try:
+            coordinate_scale = get_linear_scale_to_m(source_unit) / get_linear_scale_to_m(target_unit)
+        except UnitError as exc:
+            raise GISImportError(str(exc)) from exc
+        if not math.isfinite(coordinate_scale) or coordinate_scale <= 0:
+            raise GISImportError("GIS 到 DXF 的单位换算倍数无效。")
+
     msp = doc.modelspace()
     polyline_count = 0
     skipped_unsupported = 0
@@ -83,6 +95,13 @@ def import_geojson_to_dxf(
         geom_type = geom_dict.get("type", "unknown")
         try:
             poly_obj = shapely.geometry.shape(geom_dict)
+            if not math.isclose(coordinate_scale, 1.0):
+                poly_obj = shapely.affinity.scale(
+                    poly_obj,
+                    xfact=coordinate_scale,
+                    yfact=coordinate_scale,
+                    origin=(0.0, 0.0),
+                )
         except Exception as e:
             logger.warning(f"Feature #{feat_idx}: 几何体解析失败 ({geom_type}): {e}，已跳过。")
             skipped_errors += 1
@@ -134,6 +153,7 @@ def import_geojson_to_dxf(
         "imported_polygons": polyline_count,
         "skipped_unsupported": skipped_unsupported,
         "skipped_errors": skipped_errors,
+        "coordinate_scale": coordinate_scale,
     }
 
     if skipped_unsupported > 0 or skipped_errors > 0:

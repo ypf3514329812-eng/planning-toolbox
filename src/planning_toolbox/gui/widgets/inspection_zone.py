@@ -25,39 +25,42 @@ class InspectionZoneWidget(QFrame):
         title.setObjectName("ZoneTitle")
         layout.addWidget(title)
 
-        # 1. 顶部单位与图层总结行
-        header_box = QHBoxLayout()
-        header_box.addWidget(QLabel("DXF 插入缩放单位:"))
+        # 1. Separate units and semantic layers so the summary remains
+        # readable when the inspection zone occupies half of the window.
+        unit_box = QHBoxLayout()
+        unit_box.addWidget(QLabel("DXF 图纸单位:"))
         self.lbl_unit = QLabel("等待选择图纸...")
         self.lbl_unit.setObjectName("BadgeWarning")
-        header_box.addWidget(self.lbl_unit)
+        unit_box.addWidget(self.lbl_unit)
+        unit_box.addStretch()
+        layout.addLayout(unit_box)
 
-        header_box.addStretch()
-        header_box.addWidget(QLabel("标准图层:"))
+        layer_box = QHBoxLayout()
+        layer_box.addWidget(QLabel("识别图层:"))
         self.lbl_layers = QLabel("PARCEL [0]   BUILDING [0]   GREEN [0]")
-        self.lbl_layers.setStyleSheet("font-weight: 700; color: #38bdf8;")
-        header_box.addWidget(self.lbl_layers)
-
-        layout.addLayout(header_box)
+        self.lbl_layers.setStyleSheet("font-weight: 700; color: #7189AA;")
+        self.lbl_layers.setWordWrap(True)
+        layer_box.addWidget(self.lbl_layers, stretch=1)
+        layout.addLayout(layer_box)
 
         # 2. 4 个 Hero 数值卡片 (QFrame#KpiCard)
         cards_layout = QHBoxLayout()
         cards_layout.setSpacing(10)
 
         # 卡片 1: 多段线总数
-        self.card_total = self._create_kpi_card("多段线总数", "-", "📏")
+        self.card_total = self._create_kpi_card("多段线", "-", "📏")
         cards_layout.addWidget(self.card_total)
 
         # 卡片 2: 有效闭合数
-        self.card_closed = self._create_kpi_card("有效闭合多边形", "-", "🟢")
+        self.card_closed = self._create_kpi_card("有效闭合", "-", "🟢")
         cards_layout.addWidget(self.card_closed)
 
         # 卡片 3: 未闭合线数
-        self.card_open = self._create_kpi_card("未闭合多段线", "-", "🔴")
+        self.card_open = self._create_kpi_card("未闭合", "-", "🔴")
         cards_layout.addWidget(self.card_open)
 
         # 卡片 4: 嵌套环/孔洞歧义
-        self.card_nested = self._create_kpi_card("嵌套环/孔洞歧义", "-", "⚠️")
+        self.card_nested = self._create_kpi_card("孔洞歧义", "-", "⚠️")
         cards_layout.addWidget(self.card_nested)
 
         layout.addLayout(cards_layout)
@@ -68,7 +71,7 @@ class InspectionZoneWidget(QFrame):
             "系统已自动阻止面积和距离计算。请先在 AutoCAD 中使用 UNITS 命令将图纸单位设为【米】，或在任务配置中选择单位回退值。"
         )
         self.warning_box.setStyleSheet(
-            "background-color: #450a0a; color: #f87171; border: 1px solid #dc2626; "
+            "background-color: #F4DDDA; color: #9B5C57; border: 1px solid #D6A19A; "
             "border-radius: 6px; padding: 8px; font-weight: 700; font-size: 12px; margin-top: 4px;"
         )
         self.warning_box.setWordWrap(True)
@@ -134,11 +137,11 @@ class InspectionZoneWidget(QFrame):
         
         open_n = info.get("open_polylines", 0)
         self.card_open.value_label.setText(str(open_n))
-        self.card_open.value_label.setStyleSheet("color: #f87171;" if open_n > 0 else "color: #38bdf8;")
+        self.card_open.value_label.setStyleSheet("color: #A96761;" if open_n > 0 else "color: #607A6A;")
 
         nested_n = info.get("nested_ring_count", 0)
         self.card_nested.value_label.setText(str(nested_n))
-        self.card_nested.value_label.setStyleSheet("color: #fbbf24;" if nested_n > 0 else "color: #38bdf8;")
+        self.card_nested.value_label.setStyleSheet("color: #A6814D;" if nested_n > 0 else "color: #607A6A;")
 
     def clear_inspection(self):
         self.lbl_unit.setText("等待选择图纸...")
@@ -148,7 +151,7 @@ class InspectionZoneWidget(QFrame):
         self.card_total.value_label.setText("-")
         self.card_closed.value_label.setText("-")
         self.card_open.value_label.setText("-")
-        self.card_open.value_label.setStyleSheet("color: #38bdf8;")
+        self.card_open.value_label.setStyleSheet("color: #607A6A;")
         self.card_nested.value_label.setText("-")
-        self.card_nested.value_label.setStyleSheet("color: #38bdf8;")
+        self.card_nested.value_label.setStyleSheet("color: #607A6A;")
         self.warning_box.hide()

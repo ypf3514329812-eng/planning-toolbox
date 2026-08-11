@@ -1,0 +1,16 @@
+City Kit Roads (2.0)
+
+Created/distributed by Kenney (www.kenney.nl)
+Creation date: 13-03-2025 12:18
+
+License: Creative Commons Zero (CC0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+You can use this content for personal, educational, and commercial purposes.
+Crediting Kenney or www.kenney.nl is appreciated but not required.
+
+Planning Toolbox note:
+The selected GLB files in this directory are unmodified source assets from the
+Kenney City Kit Roads 2.0, City Kit Suburban 2.0 and City Kit Commercial 2.1
+downloads. They are retained only for provenance and deterministic conversion
+to the small SKP components bundled with the Planning Toolbox extension.

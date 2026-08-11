@@ -121,3 +121,53 @@ def test_cli_validate_command(tmp_path, capsys, monkeypatch):
     captured = capsys.readouterr()
     assert "拓扑与退线规则检查" in captured.out
     assert "合规" in captured.out
+
+
+def test_cli_china_drafting_template_and_standardize(tmp_path, capsys, monkeypatch):
+    import ezdxf
+
+    template = tmp_path / "china_coursework_template.dxf"
+    monkeypatch.setattr(sys, "argv", [
+        "planning-toolbox",
+        "layer",
+        "template",
+        "--drafting-profile",
+        "china_coursework_general",
+        "--output",
+        str(template),
+    ])
+    main()
+    assert template.is_file()
+    template_doc = ezdxf.readfile(template)
+    assert "PT_NORTH_ARROW" in {block.name for block in template_doc.blocks}
+    assert "DIMENSION" in {layer.dxf.name for layer in template_doc.layers}
+
+    source = tmp_path / "raw_coursework.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add("地块红线")
+    doc.modelspace().add_lwpolyline(
+        [(0, 0), (100, 0), (100, 80), (0, 80)],
+        close=True,
+        dxfattribs={"layer": "地块红线"},
+    )
+    doc.saveas(source)
+    output_dir = tmp_path / "standardized"
+    monkeypatch.setattr(sys, "argv", [
+        "planning-toolbox",
+        "layer",
+        "standardize",
+        "--dxf",
+        str(source),
+        "--drafting-profile",
+        "china_coursework_general",
+        "--output",
+        str(output_dir),
+    ])
+    main()
+
+    captured = capsys.readouterr()
+    assert "中国制图辅助检查" in captured.out
+    assert (output_dir / "raw_coursework_standardized.dxf").is_file()
+    assert (output_dir / "raw_coursework_standardized_china_drafting_check.txt").is_file()
+    assert (output_dir / "raw_coursework_standardized_china_drafting_check.json").is_file()

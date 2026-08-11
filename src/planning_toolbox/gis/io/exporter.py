@@ -1,6 +1,8 @@
 import json
+import math
 from pathlib import Path
 from typing import List, Dict, Any, Union, Optional
+import shapely.affinity
 import shapely.geometry
 from planning_toolbox.core.models.parcel import Parcel
 
@@ -9,6 +11,7 @@ def export_parcels_to_geojson(
     output_path: Union[Path, str],
     crs_name: Optional[str] = None,
     coordinate_units: Optional[str] = None,
+    coordinate_scale: float = 1.0,
 ) -> Path:
     """
     Exports a list of Parcel objects to a GeoJSON FeatureCollection file.
@@ -34,10 +37,21 @@ def export_parcels_to_geojson(
     out_file = Path(output_path).resolve()
     out_file.parent.mkdir(parents=True, exist_ok=True)
 
+    if not math.isfinite(float(coordinate_scale)) or float(coordinate_scale) <= 0:
+        raise ValueError("GeoJSON 坐标缩放倍数必须是大于 0 的有限数值。")
+
     features: List[Dict[str, Any]] = []
     for parcel in parcels:
         if parcel.geometry and not parcel.geometry.is_empty:
-            geom_dict = shapely.geometry.mapping(parcel.geometry)
+            geometry = parcel.geometry
+            if not math.isclose(float(coordinate_scale), 1.0):
+                geometry = shapely.affinity.scale(
+                    geometry,
+                    xfact=float(coordinate_scale),
+                    yfact=float(coordinate_scale),
+                    origin=(0.0, 0.0),
+                )
+            geom_dict = shapely.geometry.mapping(geometry)
         else:
             geom_dict = None
 
@@ -62,6 +76,7 @@ def export_parcels_to_geojson(
         "planning_toolbox_metadata": {
             "coordinate_reference_system": crs_name or "UNKNOWN",
             "coordinate_units": coordinate_units or "UNKNOWN",
+            "source_to_output_coordinate_scale": float(coordinate_scale),
             "coordinate_transform_applied": False,
         },
         "features": features

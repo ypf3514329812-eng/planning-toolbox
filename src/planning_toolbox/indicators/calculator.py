@@ -8,6 +8,7 @@ from planning_toolbox.core.models.parcel import Parcel
 from planning_toolbox.indicators.models import PlanningParcelIndicators
 from planning_toolbox.cad.io.dxf_reader import read_dxf_parcels
 from planning_toolbox.core.geometry.parser import points_from_dxf_polyline, parse_parcel_geometry
+from planning_toolbox.utils.file_integrity import sha256_file, assert_file_unchanged
 
 def calculate_parcel_indicators(
     parcel_id: str,
@@ -65,6 +66,7 @@ def process_dxf_indicators(
       (indicators_list, csv_path, report_path)
     """
     path = Path(dxf_path)
+    source_sha256_before = sha256_file(path)
     out_dir = Path(output_dir) if output_dir else path.parent / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -174,6 +176,7 @@ def process_dxf_indicators(
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(f"=== Planning Toolbox Urban Indicators Report ===\n")
         f.write(f"Source File: {path.name}\n")
+        f.write(f"Source SHA-256: {source_sha256_before}\n")
         f.write(f"Parcels Analyzed: {len(results)}\n")
         f.write(f"Detected CAD unit: {unit_name}\n")
         f.write(f"Area scale to square meters: {scale:g}\n")
@@ -191,4 +194,5 @@ def process_dxf_indicators(
             )
         f.write(f"===================================================\n")
 
+    assert_file_unchanged(path, source_sha256_before)
     return results, csv_path, report_path

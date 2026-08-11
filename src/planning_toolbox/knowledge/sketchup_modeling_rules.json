@@ -1,0 +1,540 @@
+{
+  "schema_version": 1,
+  "knowledge_id": "planning-toolbox-lightweight-urban-modeling",
+  "version": "2026.08.6",
+  "updated_at": "2026-08-09",
+  "name": "Planning Toolbox 轻量级城乡规划 SketchUp 建模规则库",
+  "scope": "CAD 场地线稿到 SketchUp 可编辑规划模型的程序化生成",
+  "normative": false,
+  "storage_policy": {
+    "embedded_images": false,
+    "embedded_models": false,
+    "model_weights": false,
+    "description": "仅保存可审计的规则、参数范围、来源和许可证信息。"
+  },
+  "safety_boundaries": [
+    "本库是个人学习与方案表达辅助规则，不是规划审批、施工图或规范符合性证明。",
+    "层数、层高、坐标系、退界和地方规范参数必须由用户或项目模板明确提供。",
+    "用户逐栋设置高于项目全局设置，项目设置高于知识库建议值。",
+    "来源资料用于结构、语义和算法思想参考；下列尺寸是本项目的可编辑建模启发值，不冒充国家或地方强制标准。"
+  ],
+  "priority_order": [
+    "user_building_override",
+    "project_settings",
+    "local_rule_template",
+    "knowledge_default"
+  ],
+  "sources": [
+    {
+      "id": "ogc-citygml-3",
+      "title": "OGC CityGML 3.0",
+      "url": "https://www.ogc.org/standards/citygml/",
+      "license": "OGC standard; reference use",
+      "adopted_for": [
+        "城市对象语义分类",
+        "多细节层级思路",
+        "建筑、道路、植被和水体的分层表达"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    },
+    {
+      "id": "cityjson-specs",
+      "title": "CityJSON Specifications",
+      "url": "https://github.com/cityjson/specs",
+      "license": "CC0-1.0",
+      "adopted_for": [
+        "紧凑 JSON 规则组织",
+        "版本化元数据",
+        "城市对象语义字段"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    },
+    {
+      "id": "osm2world",
+      "title": "OSM2World",
+      "url": "https://github.com/tordanik/OSM2World",
+      "license": "MIT",
+      "adopted_for": [
+        "从二维语义线稿程序化生成三维城市对象",
+        "建筑、道路和植被按规则生成",
+        "按对象类型选择材质与细节"
+      ],
+      "code_copied": false,
+      "confidence": "medium"
+    },
+    {
+      "id": "sketchup-ruby-api-tutorials",
+      "title": "SketchUp Ruby API Tutorials and Examples",
+      "url": "https://github.com/SketchUp/sketchup-ruby-api-tutorials",
+      "license": "MIT",
+      "adopted_for": [
+        "SketchUp 原生组与组件组织",
+        "扩展加载结构",
+        "可编辑原生几何生成"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    },
+    {
+      "id": "sketchup-entity-overview",
+      "title": "SketchUp Entity Overview",
+      "url": "https://developer.sketchup.com/article-entity-overview",
+      "license": "Official documentation; reference use",
+      "adopted_for": [
+        "重复对象使用组件定义",
+        "独立对象使用组隔离几何",
+        "用多面体近似曲面"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    },
+    {
+      "id": "3dcitydb",
+      "title": "3D City Database",
+      "url": "https://github.com/3dcitydb/3dcitydb",
+      "license": "Apache-2.0",
+      "adopted_for": [
+        "多尺度城市对象组织",
+        "对象语义与几何分离",
+        "为未来 GIS 三维城市模型交换预留结构"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    },
+    {
+      "id": "godot-road-generator",
+      "title": "Godot Road Generator",
+      "url": "https://github.com/TheDuckCow/godot-road-generator",
+      "license": "MIT",
+      "adopted_for": [
+        "以道路横断面参数驱动道路段几何",
+        "车道方向、路肩和边缘设施分离表达",
+        "按道路段延迟生成并限制复杂度"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    },
+    {
+      "id": "streetmix",
+      "title": "Streetmix",
+      "url": "https://github.com/streetmix/streetmix",
+      "license": "AGPL-3.0-or-later; concept reference only",
+      "adopted_for": [
+        "道路横断面由车行道、人行道、绿化与街道设施组合",
+        "为非专业用户提供可理解的道路组成预设",
+        "道路空间组成可单独启用或关闭"
+      ],
+      "code_copied": false,
+      "confidence": "medium"
+    },
+    {
+      "id": "gb-5768-3-2025",
+      "title": "GB 5768.3-2025 道路交通标志和标线 第3部分：道路交通标线",
+      "url": "https://std.samr.gov.cn/gb/search/gbDetailed?id=40C4523A3FB81115E06397BE0A0AE2D3",
+      "license": "Mandatory Chinese national standard metadata; reference use",
+      "adopted_for": [
+        "道路交通标线的分类、颜色、形状和尺寸语义",
+        "人行横道属于横向道路交通标线对象",
+        "正式项目必须按现行国家和地方标准人工复核"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    },
+    {
+      "id": "fhwa-mutcd-11-part-3",
+      "title": "FHWA MUTCD 11th Edition Part 3",
+      "url": "https://mutcd.fhwa.dot.gov/pdfs/11th_Edition/part3.pdf",
+      "license": "United States government publication; reference use",
+      "adopted_for": [
+        "高可视性人行横道采用均匀的纵向条带",
+        "纵向条带平行于接近车辆的行驶路径",
+        "条带间距可避让车轮路径、中心线和车道线"
+      ],
+      "code_copied": false,
+      "confidence": "high"
+    }
+  ],
+  "rules": {
+    "detail_profiles": {
+      "massing": {
+        "facade_instance_budget": 0,
+        "facade_enabled": false,
+        "site_surface_enabled": false,
+        "tree_enabled": false,
+        "architectural_details_enabled": false
+      },
+      "course": {
+        "facade_instance_budget": 8000,
+        "facade_enabled": true,
+        "facade_margin_m": 0.6,
+        "facade_depth_m": 0.06,
+        "facade_max_instances_per_building": 1500,
+        "site_surface_enabled": true,
+        "tree_enabled": true,
+        "architectural_details_enabled": true,
+        "plinth_offset_m": 0.035,
+        "entrance_depth_m": 0.1,
+        "canopy_extra_width_m": 0.5,
+        "canopy_depth_m": 1.0,
+        "balcony_enabled": false,
+        "rooftop_equipment_enabled": false
+      },
+      "presentation": {
+        "facade_instance_budget": 16000,
+        "facade_enabled": true,
+        "facade_margin_m": 0.6,
+        "facade_depth_m": 0.12,
+        "facade_max_instances_per_building": 1500,
+        "site_surface_enabled": true,
+        "tree_enabled": true,
+        "architectural_details_enabled": true,
+        "plinth_offset_m": 0.065,
+        "entrance_depth_m": 0.18,
+        "canopy_extra_width_m": 0.8,
+        "canopy_depth_m": 1.5,
+        "balcony_enabled": true,
+        "rooftop_equipment_enabled": true
+      }
+    },
+    "building_types": {
+      "generic": {
+        "facade": {
+          "module_width_m": 3.6,
+          "window_width_m": 1.6,
+          "window_height_m": 1.5,
+          "sill_height_m": 0.9
+        },
+        "entrance_width_m": 2.6,
+        "balcony_eligible": false,
+        "material_rgb": [197, 176, 147]
+      },
+      "residential": {
+        "facade": {
+          "module_width_m": 3.3,
+          "window_width_m": 1.5,
+          "window_height_m": 1.5,
+          "sill_height_m": 0.9
+        },
+        "entrance_width_m": 2.4,
+        "balcony_eligible": true,
+        "material_rgb": [202, 184, 158]
+      },
+      "office": {
+        "facade": {
+          "module_width_m": 3.6,
+          "window_width_m": 2.4,
+          "window_height_m": 1.8,
+          "sill_height_m": 0.75
+        },
+        "entrance_width_m": 3.2,
+        "balcony_eligible": false,
+        "material_rgb": [184, 193, 195]
+      },
+      "commercial": {
+        "facade": {
+          "module_width_m": 4.5,
+          "window_width_m": 3.2,
+          "window_height_m": 2.2,
+          "sill_height_m": 0.4
+        },
+        "entrance_width_m": 3.8,
+        "balcony_eligible": false,
+        "material_rgb": [211, 188, 151]
+      },
+      "campus": {
+        "facade": {
+          "module_width_m": 3.6,
+          "window_width_m": 1.8,
+          "window_height_m": 1.6,
+          "sill_height_m": 0.85
+        },
+        "entrance_width_m": 3.0,
+        "balcony_eligible": false,
+        "material_rgb": [190, 161, 141]
+      }
+    },
+    "building_details": {
+      "plinth": {
+        "height_floor_factor": 0.16,
+        "minimum_height_m": 0.35,
+        "maximum_height_m": 0.65
+      },
+      "entrance": {
+        "height_floor_factor": 0.78,
+        "minimum_height_m": 2.2,
+        "maximum_height_m": 3.2,
+        "canopy_thickness_m": 0.18
+      },
+      "balcony": {
+        "minimum_floors": 2,
+        "width_m": 3.6,
+        "depth_m": 1.25,
+        "slab_thickness_m": 0.16,
+        "railing_height_m": 1.05,
+        "max_instances": 8
+      },
+      "roof": {
+        "height_floor_factor": 0.65,
+        "minimum_height_m": 1.2,
+        "maximum_height_m": 3.0,
+        "flat_parapet_height_m": 1.1,
+        "rooftop_equipment_height_m": 1.2
+      }
+    },
+    "site_surfaces": {
+      "course": {
+        "green": {
+          "elevation_m": 0.02,
+          "thickness_m": 0.04
+        },
+        "road": {
+          "elevation_m": 0.05,
+          "thickness_m": 0.08,
+          "edge_profile": {
+            "enabled": true,
+            "treatment": "curb",
+            "width_m": 0.18,
+            "height_m": 0.1,
+            "skip_short_ends": true
+          },
+          "lane_marking": {
+            "enabled": true,
+            "dash_length_m": 4.0,
+            "gap_length_m": 4.0,
+            "width_m": 0.12,
+            "margin_m": 2.0,
+            "max_dashes": 80,
+            "minimum_road_width_m": 5.5
+          },
+          "road_design": {
+            "enabled": true,
+            "rectangular_only": true,
+            "curved_geometry_enabled": true,
+            "centerline_assumed_width_m": 6.0,
+            "minimum_length_m": 8.0,
+            "minimum_width_m": 4.0,
+            "sidewalk": {
+              "enabled": false,
+              "preferred_width_m": 1.2,
+              "minimum_width_m": 0.9,
+              "maximum_fraction_each_side": 0.2,
+              "minimum_total_road_width_m": 8.0,
+              "minimum_carriageway_width_m": 5.5,
+              "height_m": 0.08,
+              "end_margin_m": 0.35
+            },
+            "edge_marking": {
+              "enabled": true,
+              "width_m": 0.1,
+              "inset_m": 0.35
+            },
+            "direction_arrow": {
+              "enabled": false,
+              "minimum_road_width_m": 6.0,
+              "minimum_road_length_m": 22.0,
+              "spacing_m": 36.0,
+              "end_margin_m": 9.0,
+              "length_m": 2.4,
+              "width_m": 0.8,
+              "max_per_surface": 4
+            },
+            "geometry_budget": {
+              "max_sidewalk_bands": 2,
+              "max_edge_lines": 2,
+              "max_arrows": 4
+            }
+          }
+        },
+        "parking": {
+          "elevation_m": 0.06,
+          "thickness_m": 0.06,
+          "edge_profile": {
+            "enabled": true,
+            "treatment": "marking",
+            "width_m": 0.1,
+            "height_m": 0.01
+          }
+        },
+        "water": {
+          "elevation_m": -0.03,
+          "thickness_m": 0.0
+        }
+      },
+      "presentation": {
+        "green": {
+          "elevation_m": 0.04,
+          "thickness_m": 0.08,
+          "edge_profile": {
+            "enabled": true,
+            "treatment": "edging",
+            "width_m": 0.14,
+            "height_m": 0.06
+          }
+        },
+        "road": {
+          "elevation_m": 0.08,
+          "thickness_m": 0.12,
+          "edge_profile": {
+            "enabled": true,
+            "treatment": "curb",
+            "width_m": 0.24,
+            "height_m": 0.14,
+            "skip_short_ends": true
+          },
+          "lane_marking": {
+            "enabled": true,
+            "dash_length_m": 3.0,
+            "gap_length_m": 3.0,
+            "width_m": 0.15,
+            "margin_m": 3.0,
+            "max_dashes": 80,
+            "minimum_road_width_m": 5.5
+          },
+          "road_design": {
+            "enabled": true,
+            "rectangular_only": true,
+            "curved_geometry_enabled": true,
+            "centerline_assumed_width_m": 6.0,
+            "minimum_length_m": 8.0,
+            "minimum_width_m": 4.0,
+            "sidewalk": {
+              "enabled": true,
+              "preferred_width_m": 1.5,
+              "minimum_width_m": 1.0,
+              "maximum_fraction_each_side": 0.22,
+              "minimum_total_road_width_m": 8.0,
+              "minimum_carriageway_width_m": 5.5,
+              "height_m": 0.12,
+              "end_margin_m": 0.45
+            },
+            "edge_marking": {
+              "enabled": true,
+              "width_m": 0.12,
+              "inset_m": 0.22
+            },
+            "direction_arrow": {
+              "enabled": true,
+              "minimum_road_width_m": 6.0,
+              "minimum_road_length_m": 20.0,
+              "spacing_m": 30.0,
+              "end_margin_m": 8.0,
+              "length_m": 2.7,
+              "width_m": 0.9,
+              "max_per_surface": 4
+            },
+            "geometry_budget": {
+              "max_sidewalk_bands": 2,
+              "max_edge_lines": 2,
+              "max_arrows": 4
+            }
+          }
+        },
+        "parking": {
+          "elevation_m": 0.1,
+          "thickness_m": 0.08,
+          "edge_profile": {
+            "enabled": true,
+            "treatment": "marking",
+            "width_m": 0.12,
+            "height_m": 0.01
+          }
+        },
+        "water": {
+          "elevation_m": -0.08,
+          "thickness_m": 0.0,
+          "edge_profile": {
+            "enabled": true,
+            "treatment": "bank",
+            "width_m": 0.2,
+            "height_m": 0.05
+          }
+        }
+      }
+    },
+    "road_facilities": {
+      "crosswalk": {
+        "auto_orientation_enabled": true,
+        "orientation_rule": "longitudinal_bars_parallel_to_vehicle_travel",
+        "component_longitudinal_bar_axis": "local_y",
+        "rotation_offset_from_road_axis_deg": -90.0,
+        "road_match_max_distance_m": 2.0,
+        "road_match_minimum_confidence": 0.65,
+        "manual_rotation_block_tokens": [
+          "FIXED",
+          "MANUAL"
+        ],
+        "crossing_width_along_road_m": 4.0,
+        "minimum_crossing_width_along_road_m": 3.0,
+        "maximum_crossing_width_along_road_m": 6.0,
+        "road_detail_clearance_m": 0.75,
+        "carriageway_span_margin_m": 0.15,
+        "minimum_carriageway_span_m": 4.0,
+        "maximum_carriageway_span_m": 14.0,
+        "component_thickness_m": 0.08,
+        "stripe_count": 7,
+        "stripe_half_width_fraction": 0.045,
+        "stripe_half_length_fraction": 0.45,
+        "stripe_spacing_fraction": 0.13,
+        "surface_offset_m": 0.01,
+        "hide_source_mesh_edges": true,
+        "mask_underlying_markings": true,
+        "max_instances_per_model": 80
+      },
+      "traffic_light": {
+        "orientation_mode": "explicit_cad_rotation",
+        "target_height_m": 5.0,
+        "minimum_edge_clearance_m": 0.4,
+        "automatic_signal_control_inference": false,
+        "max_instances_per_model": 80
+      },
+      "quality_guards": {
+        "require_projected_or_local_metric_coordinates": true,
+        "irregular_road_orientation_fallback": "cad_rotation",
+        "ambiguous_intersection_orientation_fallback": "cad_rotation",
+        "never_create_unrequested_signal_control": true
+      }
+    },
+    "vegetation": {
+      "course": {
+        "minimum_canopy_radius_m": 0.75,
+        "maximum_canopy_radius_m": 4.5,
+        "radius_quantization_m": 0.5,
+        "trunk_height_factor": 1.4,
+        "minimum_trunk_height_m": 1.8,
+        "maximum_trunk_height_m": 5.0,
+        "canopy_height_factor": 1.8,
+        "minimum_canopy_height_m": 2.0,
+        "maximum_canopy_height_m": 7.0,
+        "trunk_radius_factor": 0.1,
+        "minimum_trunk_radius_m": 0.08,
+        "maximum_trunk_radius_m": 0.35,
+        "segments": 8,
+        "canopy_tiers": 2,
+        "variation_scale_min": 0.92,
+        "variation_scale_max": 1.08,
+        "variation_steps": 17
+      },
+      "presentation": {
+        "minimum_canopy_radius_m": 0.75,
+        "maximum_canopy_radius_m": 4.5,
+        "radius_quantization_m": 0.5,
+        "trunk_height_factor": 1.4,
+        "minimum_trunk_height_m": 1.8,
+        "maximum_trunk_height_m": 5.0,
+        "canopy_height_factor": 1.8,
+        "minimum_canopy_height_m": 2.0,
+        "maximum_canopy_height_m": 7.0,
+        "trunk_radius_factor": 0.1,
+        "minimum_trunk_radius_m": 0.08,
+        "maximum_trunk_radius_m": 0.35,
+        "segments": 12,
+        "canopy_tiers": 3,
+        "variation_scale_min": 0.92,
+        "variation_scale_max": 1.08,
+        "variation_steps": 17
+      }
+    }
+  }
+}

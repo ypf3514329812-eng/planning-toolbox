@@ -38,6 +38,17 @@ output/*
 sample_data/output/*
 scratch/*
 
+# Project-local evidence, packages and user work products
+/test_artifacts/
+/output/
+/build/
+/dist/
+*.skb
+*.ptx
+*.mcp.json
+mcp_bridge.json
+mcp_bridge.log
+
 # IDEs
 .vscode/
 .idea/
