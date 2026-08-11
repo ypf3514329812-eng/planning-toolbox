@@ -3433,6 +3433,7 @@ def _convert_black_white_linework(
     quality_baseline = write_image_to_cad_quality_baseline(result)
     result["quality_baseline_file"] = quality_baseline["path"]
     result["quality_baseline"] = quality_baseline
+    result["output_files"].append(("图片转 CAD 中文质量复核清单", quality_baseline["review_path"]))
     result["output_files"].append(("图片转 CAD 质量基线 JSON", quality_baseline["path"]))
     return result
 
@@ -3775,5 +3776,6 @@ def convert_image_to_dxf(
     quality_baseline = write_image_to_cad_quality_baseline(result)
     result["quality_baseline_file"] = quality_baseline["path"]
     result["quality_baseline"] = quality_baseline
+    result["output_files"].append(("图片转 CAD 中文质量复核清单", quality_baseline["review_path"]))
     result["output_files"].append(("图片转 CAD 质量基线 JSON", quality_baseline["path"]))
     return result

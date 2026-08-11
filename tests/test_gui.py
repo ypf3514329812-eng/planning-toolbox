@@ -321,6 +321,65 @@ def test_result_zone_shows_road_centerline_candidates(qapp):
     widget.close()
 
 
+def test_result_zone_explains_review_required_quality_gate(qapp, tmp_path):
+    review_path = tmp_path / "site_quality_review.txt"
+    review_path.write_text("review", encoding="utf-8")
+    widget = ResultZoneWidget()
+    widget.show_result(
+        {
+            "task_type": "image_to_dxf",
+            "conversion_mode": "black_white_linework",
+            "reference_width_m": 120.0,
+            "quality_baseline": {
+                "status": "review_required",
+                "passed_count": 4,
+                "review_count": 2,
+                "blocked_count": 0,
+                "gate_count": 6,
+                "review_path": str(review_path),
+                "review_items": [
+                    {"status": "review", "label": "道路中心线与连通性"},
+                    {"status": "review", "label": "人工几何复核"},
+                ],
+            },
+            "output_files": [("图片转 CAD 中文质量复核清单", str(review_path))],
+        }
+    )
+
+    assert widget.lbl_quality_review.isHidden() is False
+    assert "质量关卡需人工复核" in widget.lbl_quality_review.text()
+    assert "道路中心线与连通性、人工几何复核" in widget.lbl_quality_review.text()
+    assert widget.lbl_status_badge.text() == "完成 · 需人工复核"
+    assert widget.table.item(0, 0).text() == "全链路质量关卡"
+    assert "通过 4 / 复核 2 / 阻断 0" in widget.table.item(0, 2).text()
+    widget.close()
+
+
+def test_result_zone_marks_blocked_quality_gate(qapp):
+    widget = ResultZoneWidget()
+    widget.show_result(
+        {
+            "task_type": "sketchup_export",
+            "quality_baseline": {
+                "status": "blocked",
+                "passed_count": 1,
+                "review_count": 0,
+                "blocked_count": 1,
+                "gate_count": 2,
+                "review_items": [
+                    {"status": "blocked", "label": "源 DXF 只读校验"},
+                ],
+            },
+        }
+    )
+
+    assert "质量关卡已阻断" in widget.lbl_quality_review.text()
+    assert "请先修复阻断项" in widget.lbl_quality_review.text()
+    assert widget.lbl_status_badge.text() == "完成 · 结果已阻断"
+    assert widget.lbl_status_badge.objectName() == "BadgeError"
+    widget.close()
+
+
 def test_result_zone_offers_one_click_road_repair_from_image_result(qapp, tmp_path):
     source = tmp_path / "source.png"
     guide = tmp_path / "source_semantic_guide_template.png"

@@ -113,6 +113,13 @@ def test_image_to_dxf_traces_layers_and_preserves_source(tmp_path):
     assert quality_payload["outputs"]["dxf_sha256"] == sha256_file(output_dxf)
     assert quality_payload["summary"]["status"] == "review_required"
     assert quality_payload["summary"]["blocked_count"] == 0
+    quality_review = Path(result["quality_baseline"]["review_path"])
+    assert quality_review.is_file()
+    review_text = quality_review.read_text(encoding="utf-8-sig")
+    assert "总体结论：需人工复核" in review_text
+    assert "人工几何复核" in review_text
+    assert result["quality_baseline"]["review_items"]
+    assert result["output_files"][-2][1] == str(quality_review)
     assert result["output_files"][-1][1] == str(quality_baseline)
     assert result["semantic_scene_summary"]["semantic_object_count"] >= 4
     assert result["task_type"] == "image_to_dxf"

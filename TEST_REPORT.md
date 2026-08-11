@@ -1,24 +1,24 @@
-# Planning Toolbox Test Report（当前工作树：语义全链路接力版）
+# Planning Toolbox Test Report（当前工作树：v0.60.0 质量关卡版）
 
-> 当前验证日期：2026-08-11。当前工作树基于 Git `1362407`，本轮为 v0.58.1 SketchUp MCP 自动恢复与退出清理增强；因此测试结果代表本机工作树，不等同于旧标签 `v0.6.0-desktop-ui`。
+> 当前验证日期：2026-08-11。当前工作树基于 Git `5e607c3`，本轮为 v0.60.0 全链路质量关卡与中文复核清单增强；因此测试结果代表本机工作树，不等同于旧标签 `v0.6.0-desktop-ui`。
 
 ## Current Overall 状态
 
-**WORKING BUILD / 262 TESTS PASS / ARCGIS REAL INTEROP PASS / SKETCHUP 2026 MCP RUNTIME PASS / V0.58.1 RBZ REFRESHED**
+**WORKING BUILD / 264 TESTS PASS / QUALITY GATE UI PASS / ARCGIS REAL INTEROP PASS / SKETCHUP 2026 MCP RUNTIME PASS**
 
 - 完整命令：`python -m pytest -q`
-- 最新结果：`262 passed in 72.17s`。新增 MCP 桥接自动恢复、配置所有权、直接健康检查和 SketchUp 退出清理回归；既有 CAD、GIS、图转 CAD、GUI、SU 交接测试全部通过。
+- 最新结果：`264 passed in 23.10s`。新增“需复核/已阻断”界面质量关卡回归；既有 CAD、GIS、图转 CAD、GUI、SU 交接和 MCP 测试全部通过。
 - 真实 SketchUp 2026 桥接验证：`test_artifacts/mcp_bridge_runtime_v0581/sketchup_mcp_bridge_report.json` 为 PASS；8765 返回 v0.58.1 健康状态，测试实例自行退出后配置文件、监听端口和 SketchUp 进程均为 0 残留。
 - v0.58.1 RBZ：`test_artifacts/mcp_bridge_runtime_v0581/PlanningToolbox_SketchUp_Importer_v0581.rbz`，1,002,340 bytes，18 个成员，SHA-256 `65622B9118D67826EDFDAA6EFC59E655262D4C7C14A74223D9D960F32AF70CD3`。
-- v0.58.1 桌面目录包构建成功：`dist/PlanningToolbox/PlanningToolbox.exe`，23,114,081 bytes，SHA-256 `BCDAD09495702EE8AE13BB8ED7CA2F7EB277DBFC6681B24D5AA8CB2CE42D652F`；桌面快捷方式仍指向该文件。
+- v0.60.0 桌面目录包构建成功：`dist/PlanningToolbox/PlanningToolbox.exe`，23,128,292 bytes，SHA-256 `C5C00DA20073B43F748186756ACB38480AB5636DA31FB331BEA1613AF2076CE0`；桌面快捷方式仍指向该文件。
 - v0.54 上一轮结果：`249 passed in 33.09s`（保留作为道路去重批次的历史对照）
 - Exit code：`0`
-- GUI/EXE：PyInstaller 6.21.0 v0.58.0 目录版构建成功。桌面成品启动后界面可响应，工作集 170,168,320 bytes / 私有内存 99,151,872 bytes；第二实例自动以 code 0 退出，测试后无残留进程。当前 EXE 本体 23,106,516 bytes，目录包 672,186,946 bytes（694 个文件）。
-- EXE SHA-256：`5D1B93B422C75B190ADD5C5527E35FB4481E401348FEF47731C71CB4EFD3366A`（23,106,516 bytes）。
+- GUI/EXE：PyInstaller 目录版构建成功。桌面成品受控启动 8 秒后仍可响应，工作集约 135.6 MiB / 私有内存约 70.8 MiB，随后仅关闭本次测试实例。当前 EXE 本体 23,128,292 bytes，目录包 672,230,938 bytes（695 个文件）。
+- EXE SHA-256：`C5C00DA20073B43F748186756ACB38480AB5636DA31FB331BEA1613AF2076CE0`（23,128,292 bytes）。
 - 原始 DXF：所有自动修复只写新副本，并执行 SHA-256 零破坏校验。
 - 外部 AutoCAD 最终人工显示验证仍为 **PENDING USER VALIDATION**；ArcGIS Pro 3.7 数据互操作，以及 SketchUp 2026 的弯道、环岛、中心线道路带和本轮真实图片全链路插件导入、SKP 保存、PNG 导出均已通过。SketchUp 2026 的无模型欢迎页不会执行 `-RubyStartup`，验收脚本固定使用只读验证模型作为启动引导，并强制加载当前测试插件，避免旧版用户插件污染证据。
 
-## 当前增量：100 MB 内的规划组件与参考模式资源包（v0.58 验证批次）
+## 历史验证：100 MB 内的规划组件与参考模式资源包（v0.58 验证批次）
 
 - 组件目录从 9 个扩展到 14 个：新增停车车辆、公共座椅、灌木组、道路隔离柱和公交候车亭。5 个新增对象均保留 CAD 块旋转角，使用共享 SketchUp 定义；运行时优先使用项目原生过程式生成器，兼容 SKP 快照只作备用。
 - 资源量化：内置组件 1,220,468 bytes；组件源资产 203,549 bytes；参考模式索引 13,912 bytes；三者合计约 1.37 MiB，低于 100,000,000-byte 硬预算。参考索引收录 22 类规划场景，只存来源页面、参考图检索词、几何要点和复核清单，不嵌入图片、纹理、模型权重或网络依赖。

@@ -68,7 +68,13 @@ class ResultZoneWidget(QFrame):
         self.kpi_bar.addWidget(self.kpi_setback)
         layout.addLayout(self.kpi_bar)
 
-        # 4. 中文警告提示框 (如孔洞/NESTED_RING)
+        # 4. 全链路质量关卡：区分“程序完成”和“成果可继续/需复核/被阻断”
+        self.lbl_quality_review = QLabel("")
+        self.lbl_quality_review.setWordWrap(True)
+        self.lbl_quality_review.hide()
+        layout.addWidget(self.lbl_quality_review)
+
+        # 5. 中文警告提示框 (如孔洞/NESTED_RING)
         self.lbl_warning_banner = QLabel("")
         self.lbl_warning_banner.setStyleSheet(
             "background-color: #F4E9D3; color: #8B6B3F; border: 1px solid #D8B781; "
@@ -78,7 +84,7 @@ class ResultZoneWidget(QFrame):
         self.lbl_warning_banner.hide()
         layout.addWidget(self.lbl_warning_banner)
 
-        # 5. 子选项卡: 表格视图 / 2D 画布预览 / 控制台日志
+        # 6. 子选项卡: 表格视图 / 2D 画布预览 / 控制台日志
         self.result_tabs = QTabWidget()
         self.result_tabs.setMinimumHeight(220)
 
@@ -104,7 +110,7 @@ class ResultZoneWidget(QFrame):
 
         layout.addWidget(self.result_tabs, stretch=6)
 
-        # 6. 底部：输出文件列表与快捷按钮
+        # 7. 底部：输出文件列表与快捷按钮
         file_bar = QHBoxLayout()
         file_bar.setSpacing(6)
         file_bar.addWidget(QLabel("生成文件:"))
@@ -236,6 +242,7 @@ class ResultZoneWidget(QFrame):
         self.lbl_status_badge.setStyle(self.lbl_status_badge.style())
 
         self.progress_bar.setValue(10)
+        self.lbl_quality_review.hide()
         self.lbl_warning_banner.hide()
         self.table.setRowCount(0)
         self.file_list.clear()
@@ -375,7 +382,85 @@ class ResultZoneWidget(QFrame):
         elif task_type == "sketchup_export":
             self._display_sketchup_result(res)
 
+        self._display_quality_baseline(res)
+
         self.append_log("<span style='color:#607A6A;'><b>=== 任务成功完成 ===</b></span>")
+
+    def _display_quality_baseline(self, res: Dict[str, Any]):
+        baseline = res.get("quality_baseline", {})
+        if not isinstance(baseline, dict) or not baseline.get("status"):
+            self.lbl_quality_review.hide()
+            return
+
+        status = str(baseline.get("status"))
+        passed = int(baseline.get("passed_count", 0) or 0)
+        review = int(baseline.get("review_count", 0) or 0)
+        blocked = int(baseline.get("blocked_count", 0) or 0)
+        gate_count = int(baseline.get("gate_count", 0) or 0)
+        review_items = [
+            item
+            for item in baseline.get("review_items", [])
+            if isinstance(item, dict)
+        ]
+        priority_labels = [
+            str(item.get("label", "")).strip()
+            for item in review_items
+            if str(item.get("label", "")).strip()
+        ]
+        priority_text = "、".join(priority_labels[:3])
+        if len(priority_labels) > 3:
+            priority_text += f"等 {len(priority_labels)} 项"
+
+        palette = {
+            "blocked": ("🛑 质量关卡已阻断", "#F4DDDA", "#9B5C57", "#D6A19A"),
+            "review_required": ("⚠️ 质量关卡需人工复核", "#F4E9D3", "#8B6B3F", "#D8B781"),
+            "concept_ready": ("✅ 质量关卡通过，可继续概念流程", "#E3EEE8", "#557665", "#AAC6B5"),
+        }
+        headline, background, foreground, border = palette.get(
+            status, palette["review_required"]
+        )
+        next_step = {
+            "blocked": "请先修复阻断项，再进入下一步骤。",
+            "review_required": "可以继续概念流程，但提交或量算前必须人工复核。",
+            "concept_ready": "仍请在提交前抽查原图、比例和主要对象。",
+        }.get(status, "请完成人工复核。")
+        detail = f"通过 {passed}/{gate_count}，需复核 {review}，阻断 {blocked}。"
+        if priority_text:
+            detail += f" 优先检查：{priority_text}。"
+        if baseline.get("review_path"):
+            detail += " 双击下方“中文质量复核清单”可查看逐项操作。"
+        self.lbl_quality_review.setText(f"{headline}｜{detail}{next_step}")
+        self.lbl_quality_review.setStyleSheet(
+            f"background-color: {background}; color: {foreground}; "
+            f"border: 1px solid {border}; border-radius: 7px; "
+            "padding: 7px 10px; font-weight: 700;"
+        )
+        self.lbl_quality_review.show()
+
+        badge_text, badge_style = {
+            "blocked": ("完成 · 结果已阻断", "BadgeError"),
+            "review_required": ("完成 · 需人工复核", "BadgeWarning"),
+            "concept_ready": ("完成 · 概念流程可继续", "BadgeSuccess"),
+        }.get(status, ("完成 · 需人工复核", "BadgeWarning"))
+        self.lbl_status_badge.setText(badge_text)
+        self.lbl_status_badge.setObjectName(badge_style)
+        self.lbl_status_badge.setStyle(self.lbl_status_badge.style())
+
+        row = 0
+        self.table.insertRow(row)
+        values = (
+            "全链路质量关卡",
+            headline.replace("🛑 ", "").replace("⚠️ ", "").replace("✅ ", ""),
+            f"通过 {passed} / 复核 {review} / 阻断 {blocked}",
+            f"{priority_text or '无专项问题'}；{next_step}",
+        )
+        background_color = QColor(background)
+        foreground_color = QColor(foreground)
+        for column, value in enumerate(values):
+            item = QTableWidgetItem(str(value))
+            item.setBackground(background_color)
+            item.setForeground(foreground_color)
+            self.table.setItem(row, column, item)
 
     def _request_working_dxf(self):
         if self._continuation_path:

@@ -3519,6 +3519,7 @@ def export_sketchup_handoff(
     quality_baseline = write_cad_to_sketchup_quality_baseline(result)
     result["quality_baseline_file"] = quality_baseline["path"]
     result["quality_baseline"] = quality_baseline
+    result["output_files"].append(("CAD 转 SketchUp 中文质量复核清单", quality_baseline["review_path"]))
     result["output_files"].append(("CAD 转 SketchUp 质量基线 JSON", quality_baseline["path"]))
     return result
 

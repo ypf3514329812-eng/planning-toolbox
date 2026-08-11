@@ -70,16 +70,107 @@ def _read_json(path: Path) -> dict[str, Any] | None:
     return loaded if isinstance(loaded, dict) else None
 
 
+def _review_report_path(destination: Path) -> Path:
+    suffix = "_quality_baseline.json"
+    if destination.name.endswith(suffix):
+        artifact_name = destination.name[: -len(suffix)]
+        return destination.with_name(f"{artifact_name}_quality_review.txt")
+    return destination.with_suffix(".txt")
+
+
+def _review_report_text(payload: Mapping[str, Any], json_path: Path) -> str:
+    workflow = str(payload.get("workflow", ""))
+    workflow_label = {
+        "image_to_cad": "图片 → CAD",
+        "cad_to_sketchup": "CAD → SketchUp",
+    }.get(workflow, workflow or "未知链路")
+    summary = dict(payload.get("summary", {}))
+    status = str(summary.get("status", "review_required"))
+    status_label = {
+        "blocked": "已阻断：先修复阻断项，不要直接进入下一步骤",
+        "review_required": "需人工复核：可继续概念流程，但不可直接作为最终成果",
+        "concept_ready": "概念流程可继续：提交前仍需完成最终人工抽查",
+    }.get(status, "需人工复核")
+    gates = [item for item in payload.get("gates", []) if isinstance(item, Mapping)]
+    action_items = [item for item in gates if item.get("status") != "pass"]
+    status_names = {"pass": "通过", "review": "需复核", "blocked": "阻断"}
+
+    lines = [
+        "Planning Toolbox 质量复核清单",
+        "=" * 34,
+        f"工作链路：{workflow_label}",
+        f"生成时间：{payload.get('created_at', '')}",
+        f"总体结论：{status_label}",
+        (
+            "关卡统计："
+            f"通过 {int(summary.get('passed_count', 0))} / "
+            f"需复核 {int(summary.get('review_count', 0))} / "
+            f"阻断 {int(summary.get('blocked_count', 0))} / "
+            f"总计 {int(summary.get('gate_count', len(gates)))}"
+        ),
+        "",
+        "优先操作",
+        "-" * 34,
+    ]
+    if action_items:
+        for index, item in enumerate(action_items, start=1):
+            recommendation = str(item.get("recommendation", "")).strip()
+            lines.append(
+                f"{index}. [{status_names.get(str(item.get('status')), '需复核')}] "
+                f"{item.get('label', item.get('key', '未命名关卡'))}"
+            )
+            if recommendation:
+                lines.append(f"   怎么做：{recommendation}")
+    else:
+        lines.append("1. 当前没有阻断或专项复核项；提交前仍请抽查原图、比例和主要对象。")
+
+    lines.extend(["", "全部质量关卡", "-" * 34])
+    for item in gates:
+        lines.append(
+            f"[{status_names.get(str(item.get('status')), '需复核')}] "
+            f"{item.get('label', item.get('key', '未命名关卡'))}"
+        )
+    lines.extend(
+        [
+            "",
+            "使用边界",
+            "-" * 34,
+            "本清单用于课程学习、概念方案和人工复核辅助，不是测绘精度、规范符合、审批或课程评分证明。",
+            "原图、比例、道路连接、建筑高度和最终表达仍须由使用者确认。",
+            "",
+            f"机器可读基线：{json_path}",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _write(payload: dict[str, Any], output_path: Path | str) -> dict[str, Any]:
     destination = Path(output_path).resolve()
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    review_path = _review_report_path(destination)
+    review_path.write_text(
+        _review_report_text(payload, destination), encoding="utf-8-sig"
+    )
     summary = dict(payload["summary"])
+    review_items = [
+        {
+            "status": str(item.get("status", "review")),
+            "label": str(item.get("label", item.get("key", "未命名关卡"))),
+            "recommendation": str(item.get("recommendation", "")),
+        }
+        for item in payload.get("gates", [])
+        if isinstance(item, Mapping) and item.get("status") != "pass"
+    ]
     return {
         "path": str(destination),
         "sha256": sha256_file(destination),
+        "review_path": str(review_path),
+        "review_sha256": sha256_file(review_path),
+        "workflow": str(payload.get("workflow", "")),
+        "review_items": review_items,
         **summary,
     }
 

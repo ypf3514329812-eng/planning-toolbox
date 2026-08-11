@@ -288,6 +288,12 @@ def test_handoff_preserves_source_and_applies_local_origin(tmp_path):
     assert quality_payload["inputs"]["source_sha256"] == source_hash
     assert quality_payload["outputs"]["handoff_sha256"] == sha256_file(output)
     assert quality_payload["summary"]["blocked_count"] == 0
+    quality_review = Path(result["quality_baseline"]["review_path"])
+    assert quality_review.is_file()
+    review_text = quality_review.read_text(encoding="utf-8-sig")
+    assert "CAD → SketchUp" in review_text
+    assert "人工建模复核" in review_text
+    assert result["output_files"][-2][1] == str(quality_review)
     assert result["output_files"][-1][1] == str(quality_baseline)
 
 
