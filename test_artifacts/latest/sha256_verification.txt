@@ -1,5 +1,0 @@
-Source DXF Path: C:\AutoOS\OS1\sample_data\sample_parcels.dxf
-File Size: 19435 bytes
-SHA-256 (Before Processing): 98cbd67c024a6afa1b84df1be9c3ad0cbd7740ac55d6f1d071cf4b0f95866b18
-SHA-256 (After Processing) : 98cbd67c024a6afa1b84df1be9c3ad0cbd7740ac55d6f1d071cf4b0f95866b18
-Status: MATCH (100% Zero-Mutation)

@@ -1,9 +1,0 @@
-OS: Windows 11 x64
-Python: 3.13.9 (C:\Users\35143\anaconda3\python.exe)
-Key Packages:
-  ezdxf: 1.4.4
-  shapely: 2.1.2
-  pyyaml: 6.0.3
-  pytest: 8.4.2
-  numpy: 2.3.5
-  planning-toolbox: 0.1.1 (editable install from C:\AutoOS\OS1\src)
