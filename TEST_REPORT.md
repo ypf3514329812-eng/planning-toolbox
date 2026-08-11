@@ -1,21 +1,22 @@
-# Planning Toolbox Test Report（当前工作树：v0.60.0 质量关卡版）
+# Planning Toolbox Test Report（当前工作树：v0.61.0 候选复核版）
 
-> 当前验证日期：2026-08-11。当前工作树基于 Git `5e607c3`，本轮为 v0.60.0 全链路质量关卡与中文复核清单增强；因此测试结果代表本机工作树，不等同于旧标签 `v0.6.0-desktop-ui`。
+> 当前验证日期：2026-08-11。当前工作树基于 Git `51a7c57`，本轮为 v0.61.0 可视化语义候选复核与 CAD→SketchUp 决策接力增强；因此测试结果代表本机工作树，不等同于旧标签 `v0.6.0-desktop-ui`。
 
 ## Current Overall 状态
 
-**WORKING BUILD / 264 TESTS PASS / QUALITY GATE UI PASS / ARCGIS REAL INTEROP PASS / SKETCHUP 2026 MCP RUNTIME PASS**
+**WORKING BUILD / 270 TESTS PASS / CANDIDATE REVIEW UI PASS / QUALITY GATE UI PASS / ARCGIS REAL INTEROP PASS / SKETCHUP 2026 MCP RUNTIME PASS**
 
 - 完整命令：`python -m pytest -q`
-- 最新结果：`264 passed in 23.10s`。新增“需复核/已阻断”界面质量关卡回归；既有 CAD、GIS、图转 CAD、GUI、SU 交接和 MCP 测试全部通过。
+- 最新结果：`270 passed in 38.78s`。新增候选定位、多选接受/拒绝、恢复待确认、撤销不写入、显式决定保存、决定向派生 DXF 传播，以及接受低置信度道路后进入 SU 道路带的回归；既有 CAD、GIS、图转 CAD、GUI、SU 交接和 MCP 测试全部通过。
 - 真实 SketchUp 2026 桥接验证：`test_artifacts/mcp_bridge_runtime_v0581/sketchup_mcp_bridge_report.json` 为 PASS；8765 返回 v0.58.1 健康状态，测试实例自行退出后配置文件、监听端口和 SketchUp 进程均为 0 残留。
 - v0.58.1 RBZ：`test_artifacts/mcp_bridge_runtime_v0581/PlanningToolbox_SketchUp_Importer_v0581.rbz`，1,002,340 bytes，18 个成员，SHA-256 `65622B9118D67826EDFDAA6EFC59E655262D4C7C14A74223D9D960F32AF70CD3`。
-- v0.60.0 桌面目录包构建成功：`dist/PlanningToolbox/PlanningToolbox.exe`，23,128,292 bytes，SHA-256 `C5C00DA20073B43F748186756ACB38480AB5636DA31FB331BEA1613AF2076CE0`；桌面快捷方式仍指向该文件。
+- v0.61.0 桌面目录包构建成功：`dist/PlanningToolbox/PlanningToolbox.exe`，23,146,982 bytes，SHA-256 `DC384031F71316AE91F5D9003DF033AEBB8DEA951C0AC6A365F1AA19E4B48478`；桌面快捷方式仍指向该文件。
 - v0.54 上一轮结果：`249 passed in 33.09s`（保留作为道路去重批次的历史对照）
 - Exit code：`0`
-- GUI/EXE：PyInstaller 目录版构建成功。桌面成品受控启动 8 秒后仍可响应，工作集约 135.6 MiB / 私有内存约 70.8 MiB，随后仅关闭本次测试实例。当前 EXE 本体 23,128,292 bytes，目录包 672,230,938 bytes（695 个文件）。
-- EXE SHA-256：`C5C00DA20073B43F748186756ACB38480AB5636DA31FB331BEA1613AF2076CE0`（23,128,292 bytes）。
+- GUI/EXE：PyInstaller 目录版构建成功。桌面成品受控启动 8 秒后仍可响应，工作集约 138.6 MiB / 私有内存约 73.8 MiB，随后仅关闭本次测试实例。当前 EXE 本体 23,146,982 bytes，目录包 672,249,628 bytes（695 个文件）。
+- EXE SHA-256：`DC384031F71316AE91F5D9003DF033AEBB8DEA951C0AC6A365F1AA19E4B48478`（23,146,982 bytes）。
 - 原始 DXF：所有自动修复只写新副本，并执行 SHA-256 零破坏校验。
+- 候选复核：接受/拒绝状态仅原子更新 `.ptscene.json`；保存前校验预期 sidecar SHA-256，原 DXF 的 SHA-256 保持不变。拒绝候选在 SU 交接中降为 `underlay`，接受候选保留语义，明确接受的低置信度道路中心线可以进入道路带建模。
 - 外部 AutoCAD 最终人工显示验证仍为 **PENDING USER VALIDATION**；ArcGIS Pro 3.7 数据互操作，以及 SketchUp 2026 的弯道、环岛、中心线道路带和本轮真实图片全链路插件导入、SKP 保存、PNG 导出均已通过。SketchUp 2026 的无模型欢迎页不会执行 `-RubyStartup`，验收脚本固定使用只读验证模型作为启动引导，并强制加载当前测试插件，避免旧版用户插件污染证据。
 
 ## 历史验证：100 MB 内的规划组件与参考模式资源包（v0.58 验证批次）

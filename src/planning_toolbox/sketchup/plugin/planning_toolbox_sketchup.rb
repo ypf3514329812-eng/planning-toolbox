@@ -9,7 +9,7 @@ module PlanningToolbox
     'planning_toolbox_sketchup/main'
   )
   EXTENSION.description = '把 Planning Toolbox 的 .ptsu.json 交接文件生成分层、可编辑的 SketchUp 模型。'
-  EXTENSION.version = '0.60.0'
+  EXTENSION.version = '0.61.0'
   EXTENSION.creator = 'Planning Toolbox'
   EXTENSION.copyright = '2026 Planning Toolbox'
 

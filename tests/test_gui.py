@@ -380,6 +380,81 @@ def test_result_zone_marks_blocked_quality_gate(qapp):
     widget.close()
 
 
+def _candidate_review_fixture(tmp_path):
+    import ezdxf
+
+    from planning_toolbox.project.semantic_scene import build_semantic_scene_from_dxf
+
+    source = tmp_path / "candidate_review.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add("BW_BUILDING_CANDIDATE")
+    doc.modelspace().add_lwpolyline(
+        [(0, 0), (18, 0), (18, 10), (0, 10)],
+        close=True,
+        dxfattribs={"layer": "BW_BUILDING_CANDIDATE"},
+    )
+    doc.saveas(source)
+    scene = build_semantic_scene_from_dxf(source, reference_width_m=80.0)
+    return source, scene
+
+
+def test_semantic_candidate_review_dialog_supports_undo_without_writing(qapp, tmp_path):
+    from planning_toolbox.gui.semantic_review_dialog import SemanticCandidateReviewDialog
+    from planning_toolbox.utils.file_integrity import sha256_file
+
+    source, scene = _candidate_review_fixture(tmp_path)
+    scene_hash = sha256_file(scene["path"])
+    dialog = SemanticCandidateReviewDialog(source)
+
+    assert dialog.table.rowCount() == 1
+    assert dialog.table.item(0, 5).text() == "待确认"
+    dialog.table.selectRow(0)
+    dialog._set_selected_status("accepted")
+    assert dialog.table.item(0, 5).text() == "已接受"
+    dialog._undo()
+    assert dialog.table.item(0, 5).text() == "待确认"
+    dialog.reject()
+    assert sha256_file(scene["path"]) == scene_hash
+
+
+def test_semantic_candidate_review_dialog_saves_explicit_decision(qapp, tmp_path):
+    from planning_toolbox.gui.semantic_review_dialog import SemanticCandidateReviewDialog
+    from planning_toolbox.project.semantic_scene import load_semantic_scene_for_dxf
+
+    source, _scene = _candidate_review_fixture(tmp_path)
+    dialog = SemanticCandidateReviewDialog(source)
+    dialog.table.selectRow(0)
+    dialog._set_selected_status("rejected")
+    dialog._save()
+
+    payload = load_semantic_scene_for_dxf(source)
+    assert dialog.result() == dialog.DialogCode.Accepted
+    assert dialog.review_result["changed_count"] == 1
+    assert payload["summary"]["rejected_count"] == 1
+    assert payload["summary"]["review_required_count"] == 0
+
+
+def test_result_zone_exposes_candidate_review_for_image_chain(qapp, tmp_path):
+    source, scene = _candidate_review_fixture(tmp_path)
+    widget = ResultZoneWidget()
+    widget.show_result(
+        {
+            "task_type": "image_to_dxf",
+            "conversion_mode": "black_white_linework",
+            "dxf_file": str(source),
+            "semantic_scene_file": scene["path"],
+            "semantic_scene_summary": scene["summary"],
+            "reference_width_m": 80.0,
+        }
+    )
+
+    assert widget.btn_review_semantic_candidates.isEnabled() is True
+    assert widget.semantic_review_bar.isHidden() is False
+    assert "待确认 1" in widget.lbl_semantic_review_hint.text()
+    widget.close()
+
+
 def test_result_zone_offers_one_click_road_repair_from_image_result(qapp, tmp_path):
     source = tmp_path / "source.png"
     guide = tmp_path / "source_semantic_guide_template.png"

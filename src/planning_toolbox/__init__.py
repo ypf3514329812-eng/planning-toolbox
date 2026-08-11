@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from importlib import import_module
 
-__version__ = "0.60.0"
+__version__ = "0.61.0"
 
 # Keep the established public API while avoiding the CAD/GIS geometry stack at
 # package import time.  Each symbol is resolved once, on first use.

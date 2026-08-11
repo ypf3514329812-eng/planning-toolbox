@@ -309,6 +309,16 @@ def write_image_to_cad_quality_baseline(
             {
                 "conversion_mode": mode,
                 "semantic_candidate_review_count": review_count,
+                "semantic_candidate_accepted_count": int(
+                    dict(result.get("semantic_scene_summary", {})).get(
+                        "accepted_count", 0
+                    )
+                ),
+                "semantic_candidate_rejected_count": int(
+                    dict(result.get("semantic_scene_summary", {})).get(
+                        "rejected_count", 0
+                    )
+                ),
                 "source_image_size_px": list(result.get("image_size", [])),
                 "processed_size_px": list(result.get("processed_size", [])),
             },

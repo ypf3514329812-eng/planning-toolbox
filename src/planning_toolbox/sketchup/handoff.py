@@ -2477,6 +2477,11 @@ def inspect_sketchup_buildings(
         for layer, rule in (semantic_scene or {}).get("layer_rules", {}).items()
         if isinstance(rule, Mapping)
     }
+    semantic_registry_by_handle = {
+        str(item.get("source_handle", "")).strip().upper(): dict(item)
+        for item in (semantic_scene or {}).get("object_registry", [])
+        if isinstance(item, Mapping) and str(item.get("source_handle", "")).strip()
+    }
     doc = ezdxf.readfile(source)
     buildings: list[dict[str, Any]] = []
     for index, entity in enumerate(doc.modelspace()):
@@ -2489,6 +2494,12 @@ def inspect_sketchup_buildings(
         if not _is_closed_linework_candidate(entity):
             continue
         handle = str(entity.dxf.get("handle", "") or f"INDEX-{index}")
+        if str(
+            semantic_registry_by_handle.get(handle.upper(), {}).get(
+                "review_status", ""
+            )
+        ) == "rejected":
+            continue
         buildings.append(
             {
                 "object_id": make_stable_object_id(
@@ -2600,6 +2611,11 @@ def export_sketchup_handoff(
         for layer, rule in (semantic_scene or {}).get("layer_rules", {}).items()
         if isinstance(rule, Mapping)
     }
+    semantic_registry_by_handle = {
+        str(item.get("source_handle", "")).strip().upper(): dict(item)
+        for item in (semantic_scene or {}).get("object_registry", [])
+        if isinstance(item, Mapping) and str(item.get("source_handle", "")).strip()
+    }
     doc = ezdxf.readfile(source)
     unit_code = int(get_dxf_unit_code(doc) or 0)
     unit_name = resolve_unit(unit_code, strict_check=True)
@@ -2616,6 +2632,12 @@ def export_sketchup_handoff(
     modelspace = doc.modelspace()
     has_image_road_centerline_candidates = any(
         _is_image_road_centerline_layer(entity.dxf.get("layer", "0"))
+        and str(
+            semantic_registry_by_handle.get(
+                str(entity.dxf.get("handle", "")).upper(), {}
+            ).get("review_status", "pending")
+        )
+        != "rejected"
         for entity in modelspace
     )
 
@@ -2631,8 +2653,18 @@ def export_sketchup_handoff(
             return inherited_layer
         return layer
 
-    def resolved_layer_role(layer: str) -> str:
+    def semantic_review_record(handle: str) -> dict[str, Any]:
+        return semantic_registry_by_handle.get(str(handle).strip().upper(), {})
+
+    def resolved_layer_role(layer: str, handle: str = "") -> str:
         normalized = str(layer or "0").strip().upper()
+        review_record = semantic_review_record(handle)
+        review_status = str(review_record.get("review_status", ""))
+        semantic_object_role = str(review_record.get("role", "")).strip()
+        if review_status == "rejected":
+            return "underlay"
+        if semantic_object_role in _ROLE_TAGS:
+            return semantic_object_role
         if normalized in building_layers:
             return "building"
         semantic_rule = semantic_layer_rules.get(normalized, {})
@@ -2649,8 +2681,9 @@ def export_sketchup_handoff(
     ) -> dict[str, Any] | None:
         entity_type = entity.dxftype()
         layer = effective_layer(entity, inherited_layer)
-        role = resolved_layer_role(layer)
         handle = str(entity.dxf.get("handle", "") or stable_key)
+        review_record = semantic_review_record(handle)
+        role = resolved_layer_role(layer, handle)
 
         if entity_type in _TEXT_TYPES:
             if not include_text:
@@ -2830,6 +2863,10 @@ def export_sketchup_handoff(
             ],
             "extrusion_m": round(extrusion_m, 6),
         }
+        if review_record:
+            object_data["semantic_review_status"] = str(
+                review_record.get("review_status", "pending")
+            )
         road_centerline_object = (
             role == "road"
             and not closed
@@ -2866,6 +2903,7 @@ def export_sketchup_handoff(
             and entity_centerline_confidence is not None
             and float(entity_centerline_confidence)
             < _ROAD_CENTERLINE_TRUST_THRESHOLD
+            and str(review_record.get("review_status", "pending")) != "accepted"
         )
         centerline_corridor_suppressed = bool(
             centerline_corridor
@@ -3026,9 +3064,10 @@ def export_sketchup_handoff(
             skipped["block_depth_limit"] += 1
             return None
         layer = effective_layer(entity, inherited_layer)
-        role = resolved_layer_role(layer)
         block_name = str(entity.dxf.get("name", "UNNAMED") or "UNNAMED")
         handle = str(entity.dxf.get("handle", "") or stable_key)
+        review_record = semantic_review_record(handle)
+        role = resolved_layer_role(layer, handle)
         object_id = make_stable_object_id(manifest.project_id, "block", stable_key)
         children: list[dict[str, Any]] = []
 
@@ -3091,6 +3130,10 @@ def export_sketchup_handoff(
             "extrusion_m": 0.0,
             "children": children,
         }
+        if review_record:
+            object_data["semantic_review_status"] = str(
+                review_record.get("review_status", "pending")
+            )
         if procedural_symbol is not None:
             object_data["procedural_symbol"] = procedural_symbol
             if procedural_symbol.get("type") == "tree":
@@ -3182,6 +3225,8 @@ def export_sketchup_handoff(
     semantic_review_required_count = int(
         semantic_scene_summary.get("review_required_count", 0)
     )
+    semantic_accepted_count = int(semantic_scene_summary.get("accepted_count", 0))
+    semantic_rejected_count = int(semantic_scene_summary.get("rejected_count", 0))
     course_model_readiness = _course_model_readiness(
         objects,
         semantic_scene_validated=semantic_scene is not None,
@@ -3214,6 +3259,8 @@ def export_sketchup_handoff(
             "review_required_count": int(
                 semantic_scene_summary.get("review_required_count", 0)
             ),
+            "accepted_count": semantic_accepted_count,
+            "rejected_count": semantic_rejected_count,
             "semantic_object_count": int(
                 semantic_scene_summary.get("semantic_object_count", 0)
             ),
@@ -3402,6 +3449,8 @@ def export_sketchup_handoff(
         "semantic_review_required_count": int(
             semantic_scene_summary.get("review_required_count", 0)
         ),
+        "semantic_accepted_count": semantic_accepted_count,
+        "semantic_rejected_count": semantic_rejected_count,
         "block_count": int(stats["block"]),
         "surface_face_count": int(stats["surface_face"]),
         "text_count": int(stats["text"]),

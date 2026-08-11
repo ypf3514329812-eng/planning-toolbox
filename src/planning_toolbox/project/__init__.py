@@ -13,6 +13,7 @@ from planning_toolbox.project.chain_manifest import (
 _SEMANTIC_EXPORTS = {
     "SEMANTIC_SCENE_FORMAT",
     "SEMANTIC_SCENE_SCHEMA_VERSION",
+    "apply_semantic_candidate_reviews",
     "build_semantic_scene_from_dxf",
     "load_semantic_scene_for_dxf",
     "propagate_semantic_scene_to_derived_dxf",
@@ -39,6 +40,7 @@ __all__ = [
     "new_chain_manifest",
     "SEMANTIC_SCENE_FORMAT",
     "SEMANTIC_SCENE_SCHEMA_VERSION",
+    "apply_semantic_candidate_reviews",
     "build_semantic_scene_from_dxf",
     "load_semantic_scene_for_dxf",
     "propagate_semantic_scene_to_derived_dxf",

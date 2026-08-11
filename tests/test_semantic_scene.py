@@ -11,6 +11,7 @@ import pytest
 from planning_toolbox.project.chain_manifest import CRSDefinition, new_chain_manifest
 from planning_toolbox.project.semantic_scene import (
     SEMANTIC_SCENE_FORMAT,
+    apply_semantic_candidate_reviews,
     build_semantic_scene_from_dxf,
     load_semantic_scene_for_dxf,
     propagate_semantic_scene_to_derived_dxf,
@@ -75,11 +76,102 @@ def test_semantic_scene_is_small_source_bound_and_reviewable(tmp_path):
     assert payload["summary"]["semantic_object_count"] == 1
     assert payload["summary"]["underlay_entity_count"] == 4
     assert payload["summary"]["review_required_count"] == 1
+    assert payload["summary"]["accepted_count"] == 0
+    assert payload["summary"]["rejected_count"] == 0
     assert payload["layer_rules"]["BW_BUILDING_CANDIDATE"]["role"] == "building"
+    assert len(payload["object_registry"][0]["bounds"]) == 4
     assert set(payload["underlay_layers"]) == {"BW_CLOSED", "BW_LINEWORK"}
     assert sidecar.stat().st_size < 20_000
     assert sha256_file(source) == source_hash
     assert load_semantic_scene_for_dxf(source) is not None
+
+
+def test_candidate_reviews_are_source_safe_and_drive_sketchup_roles(tmp_path):
+    source = _semantic_image_dxf(tmp_path / "reviewed.dxf")
+    source_hash = sha256_file(source)
+    scene = build_semantic_scene_from_dxf(
+        source,
+        reference_width_m=120.0,
+        conversion_mode="black_white_linework",
+    )
+    payload = load_semantic_scene_for_dxf(source)
+    candidate = payload["object_registry"][0]
+
+    rejected = apply_semantic_candidate_reviews(
+        source,
+        {candidate["id"]: "rejected"},
+        expected_scene_sha256=scene["sha256"],
+    )
+    rejected_payload = load_semantic_scene_for_dxf(source)
+    assert rejected["changed_count"] == 1
+    assert rejected["zero_mutation_verified"] is True
+    assert rejected_payload["summary"]["review_required_count"] == 0
+    assert rejected_payload["summary"]["rejected_count"] == 1
+    assert rejected_payload["summary"]["role_counts"]["underlay"] == 5
+    assert sha256_file(source) == source_hash
+
+    rejected_output = tmp_path / "reviewed_rejected.ptsu.json"
+    rejected_handoff = export_sketchup_handoff(
+        source,
+        rejected_output,
+        _local_manifest(),
+        floors=6,
+        floor_height_m=3.0,
+        building_layers="BW_BUILDING_CANDIDATE",
+    )
+    assert rejected_handoff["building_count"] == 0
+    assert rejected_handoff["semantic_rejected_count"] == 1
+    assert rejected_handoff["underlay_source_entity_count"] == 5
+
+    accepted = apply_semantic_candidate_reviews(
+        source,
+        {candidate["id"]: "accepted"},
+        expected_scene_sha256=rejected["sha256"],
+    )
+    accepted_output = tmp_path / "reviewed_accepted.ptsu.json"
+    accepted_handoff = export_sketchup_handoff(
+        source,
+        accepted_output,
+        _local_manifest(),
+        floors=6,
+        floor_height_m=3.0,
+        building_layers="BW_BUILDING_CANDIDATE",
+    )
+    assert accepted["summary"]["accepted_count"] == 1
+    assert accepted["summary"]["rejected_count"] == 0
+    assert accepted_handoff["building_count"] == 1
+    assert accepted_handoff["semantic_accepted_count"] == 1
+    assert accepted_handoff["semantic_review_required_count"] == 0
+    assert sha256_file(source) == source_hash
+
+    unchanged = apply_semantic_candidate_reviews(
+        source,
+        {candidate["id"]: "accepted"},
+        expected_scene_sha256=accepted["sha256"],
+    )
+    assert unchanged["changed_count"] == 0
+    assert unchanged["sha256"] == accepted["sha256"]
+
+
+def test_candidate_review_decisions_propagate_to_derived_dxf(tmp_path):
+    source = _semantic_image_dxf(tmp_path / "review_source.dxf")
+    scene = build_semantic_scene_from_dxf(source)
+    payload = load_semantic_scene_for_dxf(source)
+    candidate = payload["object_registry"][0]
+    apply_semantic_candidate_reviews(
+        source,
+        {candidate["id"]: "accepted"},
+        expected_scene_sha256=scene["sha256"],
+    )
+
+    derived = tmp_path / "review_derived.dxf"
+    ezdxf.readfile(source).saveas(derived)
+    propagate_semantic_scene_to_derived_dxf(source, derived)
+    derived_payload = load_semantic_scene_for_dxf(derived)
+
+    assert derived_payload["object_registry"][0]["review_status"] == "accepted"
+    assert derived_payload["summary"]["accepted_count"] == 1
+    assert derived_payload["summary"]["review_required_count"] == 0
 
 
 def test_black_white_road_candidate_is_reviewable_road_semantics(tmp_path):

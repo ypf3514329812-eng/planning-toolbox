@@ -16,7 +16,11 @@ from PySide6.QtWidgets import QApplication
 
 from planning_toolbox import __version__
 from planning_toolbox.project.chain_manifest import CRSDefinition, LocalOrigin, new_chain_manifest
-from planning_toolbox.project.semantic_scene import build_semantic_scene_from_dxf
+from planning_toolbox.project.semantic_scene import (
+    apply_semantic_candidate_reviews,
+    build_semantic_scene_from_dxf,
+    load_semantic_scene_for_dxf,
+)
 from planning_toolbox.sketchup import (
     build_sketchup_extension,
     export_sketchup_handoff,
@@ -1430,6 +1434,45 @@ def test_trusted_only_centerline_policy_keeps_low_confidence_candidate_as_review
             _manifest(),
             centerline_confidence_policy="unknown",
         )
+
+
+def test_explicitly_accepted_low_confidence_centerline_can_generate_corridor(tmp_path):
+    source = tmp_path / "accepted_low_confidence_centerline.dxf"
+    doc = ezdxf.new("R2010")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.add("BW_ROAD_CENTERLINE_CANDIDATE")
+    doc.appids.add("PT_ROAD_WIDTH_M")
+    doc.appids.add("PT_ROAD_CONFIDENCE")
+    entity = doc.modelspace().add_lwpolyline(
+        [(500000.0, 3400000.0), (500080.0, 3400000.0)],
+        dxfattribs={"layer": "BW_ROAD_CENTERLINE_CANDIDATE"},
+    )
+    entity.set_xdata("PT_ROAD_WIDTH_M", [(1040, 12.0)])
+    entity.set_xdata("PT_ROAD_CONFIDENCE", [(1040, 0.42)])
+    doc.saveas(source)
+    scene = build_semantic_scene_from_dxf(source)
+    candidate = load_semantic_scene_for_dxf(source)["object_registry"][0]
+    assert candidate["confidence"] == pytest.approx(0.42)
+    reviewed = apply_semantic_candidate_reviews(
+        source,
+        {candidate["id"]: "accepted"},
+        expected_scene_sha256=scene["sha256"],
+    )
+
+    result = export_sketchup_handoff(
+        source,
+        tmp_path / "accepted_low_confidence_centerline.ptsu.json",
+        _manifest(),
+        model_detail_level="presentation",
+        road_design_preset="complete",
+        centerline_corridor=True,
+        centerline_confidence_policy="trusted_only",
+    )
+
+    assert reviewed["summary"]["accepted_count"] == 1
+    assert result["road_centerline_corridor_hint_count"] == 1
+    assert result["road_centerline_corridor_suppressed_count"] == 0
+    assert result["semantic_accepted_count"] == 1
 
 
 def test_trusted_image_centerline_corridor_turns_duplicate_road_area_into_review_outline(

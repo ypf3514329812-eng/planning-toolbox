@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 from PySide6.QtWidgets import (
     QFrame, QVBoxLayout, QHBoxLayout, QLabel, QProgressBar, QTextEdit,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QListWidget, QListWidgetItem, QTabWidget, QWidget,
-    QFileDialog, QMessageBox,
+    QFileDialog, QMessageBox, QDialog,
 )
 from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QColor, QTextCursor
@@ -171,6 +171,27 @@ class ResultZoneWidget(QFrame):
         self.road_repair_bar.hide()
         layout.addWidget(self.road_repair_bar)
 
+        semantic_review_bar = QHBoxLayout()
+        self.lbl_semantic_review_hint = QLabel(
+            "在系统内逐项接受或拒绝机器候选；拒绝项只降级为参考底图，不会删除 DXF 图元。"
+        )
+        self.lbl_semantic_review_hint.setWordWrap(True)
+        self.lbl_semantic_review_hint.setObjectName("MutedHint")
+        semantic_review_bar.addWidget(self.lbl_semantic_review_hint, stretch=1)
+        self.btn_review_semantic_candidates = QPushButton("✅ 复核候选对象")
+        self.btn_review_semantic_candidates.setToolTip(
+            "打开带 CAD 定位框的候选清单，可批量接受、拒绝、恢复待确认和撤销"
+        )
+        self.btn_review_semantic_candidates.setEnabled(False)
+        self.btn_review_semantic_candidates.clicked.connect(
+            self._review_semantic_candidates
+        )
+        semantic_review_bar.addWidget(self.btn_review_semantic_candidates)
+        self.semantic_review_bar = QWidget()
+        self.semantic_review_bar.setLayout(semantic_review_bar)
+        self.semantic_review_bar.hide()
+        layout.addWidget(self.semantic_review_bar)
+
         sketchup_bar = QHBoxLayout()
         self.lbl_sketchup_handoff_hint = QLabel(
             "图转 CAD 已完成；可以直接进入 SketchUp 交接，自动复用同目录的语义底图和结果。"
@@ -254,6 +275,8 @@ class ResultZoneWidget(QFrame):
         self.btn_repair_compare.setEnabled(False)
         self.btn_edit_road_guide.setEnabled(False)
         self.road_repair_bar.hide()
+        self.btn_review_semantic_candidates.setEnabled(False)
+        self.semantic_review_bar.hide()
         self.btn_continue_sketchup.setEnabled(False)
         self.sketchup_handoff_bar.hide()
         self.btn_curate_cad.setEnabled(False)
@@ -331,6 +354,26 @@ class ResultZoneWidget(QFrame):
         )
         self.btn_edit_road_guide.setEnabled(road_repair_available)
         self.road_repair_bar.setVisible(road_repair_available)
+        semantic_scene_path = str(res.get("semantic_scene_file", "") or "").strip()
+        semantic_review_available = (
+            task_type == "image_to_dxf"
+            and bool(semantic_scene_path)
+            and Path(semantic_scene_path).is_file()
+            and bool(str(res.get("dxf_file", "") or "").strip())
+            and Path(str(res.get("dxf_file", ""))).is_file()
+        )
+        semantic_summary = res.get("semantic_scene_summary", {})
+        if not isinstance(semantic_summary, dict):
+            semantic_summary = {}
+        self.lbl_semantic_review_hint.setText(
+            "候选复核："
+            f"已接受 {int(semantic_summary.get('accepted_count', 0) or 0)}，"
+            f"已拒绝 {int(semantic_summary.get('rejected_count', 0) or 0)}，"
+            f"待确认 {int(semantic_summary.get('review_required_count', 0) or 0)}。"
+            "拒绝项不会从 DXF 删除。"
+        )
+        self.btn_review_semantic_candidates.setEnabled(semantic_review_available)
+        self.semantic_review_bar.setVisible(semantic_review_available)
 
         sketchup_dxf = str(res.get("dxf_file", "") or "").strip()
         if not sketchup_dxf:
@@ -476,6 +519,57 @@ class ResultZoneWidget(QFrame):
         review_overlay = str(self.last_result.get("road_review_overlay_file", ""))
         if source and guide:
             self.road_repair_requested.emit(source, guide, review_overlay)
+
+    def _review_semantic_candidates(self):
+        if not self.last_result:
+            return
+        dxf_path = str(self.last_result.get("dxf_file", "") or "").strip()
+        if not dxf_path or not Path(dxf_path).is_file():
+            self.lbl_warning_banner.setText("🛑 找不到本次图转 CAD 的 DXF，无法打开候选复核。")
+            self.lbl_warning_banner.show()
+            return
+        try:
+            from planning_toolbox.gui.semantic_review_dialog import (
+                SemanticCandidateReviewDialog,
+            )
+
+            dialog = SemanticCandidateReviewDialog(dxf_path, self)
+        except Exception as exc:
+            self.lbl_warning_banner.setText(f"🛑 无法打开候选复核：{exc}")
+            self.lbl_warning_banner.show()
+            return
+        if dialog.exec() != QDialog.DialogCode.Accepted or not dialog.review_result:
+            return
+
+        updated = dict(self.last_result)
+        review_result = dict(dialog.review_result)
+        updated["semantic_scene_file"] = review_result["path"]
+        updated["semantic_scene_sha256"] = review_result["sha256"]
+        updated["semantic_scene_summary"] = dict(review_result["summary"])
+        try:
+            from planning_toolbox.project.quality_baseline import (
+                write_image_to_cad_quality_baseline,
+            )
+
+            quality_baseline = write_image_to_cad_quality_baseline(updated)
+            updated["quality_baseline_file"] = quality_baseline["path"]
+            updated["quality_baseline"] = quality_baseline
+        except Exception as exc:
+            self.lbl_warning_banner.setText(
+                f"⚠️ 候选决定已保存，但质量复核清单更新失败：{exc}"
+            )
+            self.lbl_warning_banner.show()
+            return
+
+        self.table.setRowCount(0)
+        self.file_list.clear()
+        self.lbl_quality_review.hide()
+        self.lbl_warning_banner.hide()
+        self.show_result(updated)
+        changed = int(review_result.get("changed_count", 0) or 0)
+        self.append_log(
+            f"<span style='color:#607A6A;'><b>候选复核已保存：</b>本次更新 {changed} 个对象；原 DXF 未修改。</span>"
+        )
 
     def _request_sketchup_handoff(self):
         if not self.last_result or self.last_result.get("task_type") != "image_to_dxf":
@@ -969,7 +1063,7 @@ class ResultZoneWidget(QFrame):
                     (
                         "全链路语义交接",
                         f"候选对象 {semantic_summary.get('semantic_object_count', 0)} 个",
-                        f"待人工复核 {semantic_summary.get('review_required_count', 0)} 个",
+                        f"接受 {semantic_summary.get('accepted_count', 0)} / 拒绝 {semantic_summary.get('rejected_count', 0)} / 待复核 {semantic_summary.get('review_required_count', 0)}",
                         f"参考底图 {semantic_summary.get('underlay_entity_count', 0)} 条；会随修复和标准化继续传递",
                     )
                 )
@@ -1186,7 +1280,7 @@ class ResultZoneWidget(QFrame):
                 (
                     "全链路语义交接",
                     f"候选对象 {semantic_summary.get('semantic_object_count', 0)} 个",
-                    f"待人工复核 {semantic_summary.get('review_required_count', 0)} 个",
+                    f"接受 {semantic_summary.get('accepted_count', 0)} / 拒绝 {semantic_summary.get('rejected_count', 0)} / 待复核 {semantic_summary.get('review_required_count', 0)}",
                     f"参考底图 {semantic_summary.get('underlay_entity_count', 0)} 条；下游不再重复猜图层用途",
                 )
             )
@@ -1289,7 +1383,7 @@ class ResultZoneWidget(QFrame):
                 "全链路语义",
                 "已校验" if res.get("semantic_scene_validated") else "普通 CAD（无图片语义）",
                 f"{res.get('underlay_source_entity_count', 0)} 条参考线 → {res.get('underlay_bundle_count', 0)} 个锁定底图组",
-                f"待人工复核 {res.get('semantic_review_required_count', 0)} 个候选；源几何 {source_object_count} 个",
+                f"接受 {res.get('semantic_accepted_count', 0)} / 拒绝 {res.get('semantic_rejected_count', 0)} / 待复核 {res.get('semantic_review_required_count', 0)}；源几何 {source_object_count} 个",
             ),
             (
                 "导入插件",
