@@ -3,7 +3,7 @@
 > 自动消除城乡规划学习、课程设计和规划分析过程中重复、机械、低价值的数据整理、CAD 制图、GIS 转换、面积统计、指标核算和规则检查工作。
 > **原则：人负责规划判断，程序负责计算和重复劳动。**
 
-> **当前状态：开源发布准备中的 Public Beta。** 当前本地工作树尚未上传 GitHub；公开发布范围、合规要求和后续功能路线见 [开源发布与产品优化计划书](OPEN_SOURCE_RELEASE_OPTIMIZATION_PLAN.md)。
+> **当前状态：Public Beta（已发布到 GitHub）。** 当前公开版本、合规要求和后续功能路线见 [开源发布与产品优化计划书](OPEN_SOURCE_RELEASE_OPTIMIZATION_PLAN.md)。
 
 相关文档：
 
